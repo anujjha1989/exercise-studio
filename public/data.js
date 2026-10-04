@@ -141,9 +141,9 @@ const EX=[
  {id:"bicycle",name:"Bicycle crunch",g:"core",mv:"core",also:[],eq:"bw",fast:1,poses:[BIKE,sw(BIKE)],
   steps:["Lie on your back, hands by your head, shoulders off the floor.","Bring one knee in while you extend the other leg and turn your opposite elbow to the knee.","Switch sides in a pedalling motion."],
   tip:"Slow and controlled beats fast. Count each side as one rep."},
- {id:"twist",name:"Russian twist",g:"core",mv:"core",also:[],eq:"both",db:1,
+ {id:"twist",name:"Russian twist",g:"core",mv:"core",also:[],eq:"both",
   poses:[{n:[44,60],p:[62,84],a:[[55,66],[65,69]],l:[[80,70],[94,82]]},{n:[44,60],p:[62,84],a:[[50,69],[53,77]],l:[[80,70],[94,82]]}],
-  steps:["Sit with knees bent, lean back until your abs switch on.","Hold a dumbbell at your chest and rotate your torso to one side.","Rotate to the other side. That is one rep."],
+  steps:["Sit with knees bent, lean back until your abs switch on.","Clasp your hands at your chest (or hold a dumbbell) and rotate your torso to one side.","Rotate to the other side. That is one rep."],
   tip:"Turn your shoulders, not just your arms. Lift your feet to make it harder."},
  {id:"deadbug",name:"Dead bug",g:"core",mv:"core",also:[],eq:"bw",poses:[BUG,sw(BUG)],
   steps:["Lie on your back, arms pointing up, knees bent at 90° above your hips.","Lower one arm behind you and extend the opposite leg, without arching your back.","Return and switch sides."],
@@ -163,7 +163,7 @@ const EX=[
   poses:[{n:[60,26],p:[60,54],a:[[62,40],[67,31]],l:[[61,72],[62,90]]},{...SQ,a:[[62,58],[68,50]]}],
   steps:["Hold one dumbbell against your chest, feet shoulder-width apart.","Sit down and back until your thighs are level with the floor.","Drive through your heels to stand."],
   tip:"Keep your chest tall and knees tracking over your toes."},
- {id:"lunge",name:"Lunge",g:"legs",mv:"legs",also:[],eq:"both",db:1,
+ {id:"lunge",name:"Lunge",g:"legs",mv:"legs",also:[],eq:"both",
   poses:[{...ST,l2:[[61,72],[60,90]]},{n:[60,38],p:[60,66],a:[[60,52],[61,65]],l:[[77,70],[77,90]],l2:[[56,85],[40,88]]}],
   steps:["Stand tall, dumbbells at your sides (or hands on hips).","Step forward and lower until both knees are at about 90°.","Push off the front foot to return, then switch legs."],
   tip:"Count each leg as one rep. Step backwards instead if your knees complain."},
@@ -171,8 +171,8 @@ const EX=[
   poses:[{n:[60,26],p:[60,54],a:[[56,40],[58,50]],a2:[[64,40],[62,50]],l:[[56,72],[55,90]],l2:[[64,72],[65,90]]},{n:[50,40],p:[52,66],a:[[49,52],[54,60]],a2:[[56,52],[55,60]],l:[[40,72],[38,90]],l2:[[66,78],[79,90]]}],
   steps:["Stand tall with feet together.","Take a big step to one side and sit back into that hip, other leg straight.","Push back to standing and switch sides."],
   tip:"Works the inner thighs and glutes that forward lunges miss."},
- {id:"bulgarian",name:"Bulgarian split squat",g:"legs",mv:"legs",also:[],eq:"both",db:1,prop:{chair:[80,"r"]},
-  poses:[{n:[58,28],p:[58,56],a:[[58,42],[59,55]],l:[[60,74],[58,90]],l2:[[71,71],[86,68]]},{n:[58,40],p:[58,68],a:[[58,54],[59,67]],l:[[73,71],[62,90]],l2:[[68,84],[86,68]]}],
+ {id:"bulgarian",name:"Bulgarian split squat",g:"legs",mv:"legs",also:[],eq:"both",prop:{chair:[80,"r"]},
+  poses:[{n:[58,28],p:[58,56],a:[[58,42],[57,55]],l:[[56,74],[55,90]],l2:[[71,71],[86,68]]},{n:[57,40],p:[58,68],a:[[58,54],[57,67]],l:[[44,71],[50,90]],l2:[[68,84],[86,68]]}],
   steps:["Stand a long step in front of a chair and rest the top of one foot on the seat behind you.","Lower straight down until your front thigh is level with the floor.","Drive up through the front heel. Finish the set, then switch legs."],
   tip:"The best single home exercise for legs. Start with bodyweight; it is harder than it looks."},
  {id:"sumo",name:"Sumo squat",g:"legs",mv:"legs",also:[],eq:"db",db:1,mir:1,
@@ -183,7 +183,7 @@ const EX=[
   poses:[ST,{n:[44,46],p:[68,57],a:[[45,60],[46,74]],l:[[65,74],[62,90]]}],
   steps:["Stand tall, dumbbells in front of your thighs, knees soft.","Push your hips back and slide the dumbbells down your legs, back flat.","Drive your hips forward to stand."],
   tip:"You should feel a stretch in your hamstrings, not a pull in your lower back."},
- {id:"singlerdl",name:"Single-leg deadlift",g:"legs",mv:"legs",also:["back","core"],eq:"both",db:1,
+ {id:"singlerdl",name:"Single-leg deadlift",g:"legs",mv:"legs",also:["back","core"],eq:"both",
   poses:[{...ST,l2:[[61,72],[60,90]]},{n:[42,50],p:[66,56],a:[[44,64],[45,77]],l:[[66,74],[64,90]],l2:[[83,55],[101,53]]}],
   steps:["Stand on one leg with a soft knee.","Hinge forward, letting the free leg rise behind you as your chest drops.","Squeeze your glute to stand back up. Finish the set, then switch legs."],
   tip:"Touch a wall with one hand for balance at first."},
@@ -227,7 +227,7 @@ const EX=[
   steps:["Squat down with your arms swung back.","Jump straight up, reaching for the ceiling.","Land softly and go straight into the next squat."],
   tip:"Land toe to heel with bent knees. Quality over height."},
  {id:"swing",name:"Dumbbell swing",g:"cardio",mv:"cardio",also:["legs","back"],eq:"db",db:1,
-  poses:[{n:[46,46],p:[66,56],a:[[52,60],[58,72]],l:[[66,74],[62,90]]},{...ST,a:[[73,30],[86,28]]}],
+  poses:[{n:[74,46],p:[54,56],a:[[68,60],[62,72]],l:[[55,74],[58,90]]},{...ST,a:[[73,30],[86,28]]}],
   steps:["Hold one dumbbell with both hands and hinge at the hips so it swings between your legs.","Snap your hips forward to swing it to chest height.","Let it fall back between your legs and repeat."],
   tip:"The power comes from your hips, not your arms. Grip tight."},
  {id:"thruster",name:"Dumbbell thruster",g:"cardio",mv:"cardio",also:["legs","shoulders"],eq:"db",db:1,
@@ -235,3 +235,6 @@ const EX=[
   steps:["Hold dumbbells at your shoulders and squat down.","Stand up fast and use the momentum to press the dumbbells overhead.","Bring them back to your shoulders as you drop into the next squat."],
   tip:"One smooth movement. A great calorie burner with light weights."}
 ];
+/* which way each figure faces: flip = facing left or face-down; front = seen from the front */
+["pushup","widepushup","inclinepushup","declinepushup","row","onearmrow","renegade","superman","yraise","pikepushup","kickback","dips","diamond","plank","birddog","climber","deadlift","singlerdl","donkey","bulgarian"].forEach(id=>{EX.find(e=>e.id===id).flip=1});
+["sidelunge","skater"].forEach(id=>{EX.find(e=>e.id===id).front=1});

@@ -236,7 +236,7 @@ function doLog(){
 
 /* ================= exercise sheet ================= */
 function figTools(){return `<div class="tools"><button class="pillb" data-act="tg-hl" aria-pressed="${UI.hl}">Muscles</button><button class="pillb" data-act="tg-slow" aria-pressed="${UI.slow}">Slow motion</button></div>`}
-const figAttr=()=>`data-play="1"${UI.hl?' data-hl="1"':""}${UI.slow?' data-slow="1"':""}`;
+const figAttr=()=>`data-play="1" data-hl="${UI.hl?1:0}"${UI.slow?' data-slow="1"':""}`;
 function openSheet(id,date){
   const e=exById(id);if(!e)return;CTX={ex:e,date:date||TODAY};
   const sc=scheme(),sg=suggest(e,CTX.date);
@@ -301,7 +301,7 @@ function renderPlayer(){
     playerEl.innerHTML=`${bar}<div class="pcenter"><span class="eyebrow" style="color:#fff">Rest</span><div class="bigclock" id="pclock">${mmss(Math.max(0,Math.ceil((R.end-Date.now())/1000)))}</div>
       <p><b>Next:</b> ${esc(e.name)}, set ${Math.min(done+1,sc.sets)} of ${sc.sets}</p>
       <div class="row" style="justify-content:center"><button class="btn ghostw" data-act="rest-add">+15 s</button><button class="btn white" data-act="rest-skip">Skip rest</button></div>
-      <canvas data-ex="${e.id}" data-play="1" style="width:min(300px,60vw);aspect-ratio:6/5"></canvas></div>`;
+      <canvas class="figpanel" data-ex="${e.id}" data-play="1" style="width:min(300px,60vw);aspect-ratio:6/5"></canvas></div>`;
     return;
   }
   CTX={ex:e,date:P.date};const sg=suggest(e,P.date);
@@ -355,7 +355,7 @@ function vToday(){
 function libGrid(){
   const q=UI.q.trim().toLowerCase();
   const list=exAll().filter(e=>(UI.fg==="all"||e.g===UI.fg||e.also.includes(UI.fg))&&(UI.feq==="all"||e.eq===UI.feq||e.eq==="both")&&(!q||e.name.toLowerCase().includes(q)));
-  return list.map(e=>`<button class="ex g-${e.g}" data-act="open" data-ex="${e.id}"><canvas data-ex="${e.id}"></canvas><b>${esc(e.name)}</b><small>${GROUPS[e.g]} · ${e.eq==="bw"?"Body":e.eq==="db"?"Dumbbells":"Either"}</small></button>`).join("")||`<p class="mute">No exercises match. Clear the filters, or add your own in Setup.</p>`;
+  return list.map(e=>`<button class="ex g-${e.g}" data-act="open" data-ex="${e.id}"><canvas data-ex="${e.id}"></canvas><b>${esc(e.name)}</b><small><i>${GROUPS[e.g]}</i>${e.eq==="bw"?"Bodyweight":e.eq==="db"?"Dumbbells":"Either"}</small></button>`).join("")||`<p class="mute">No exercises match. Clear the filters, or add your own in Setup.</p>`;
 }
 function vLibrary(){
   return `${UI.logDate!==TODAY?`<div class="banner"><span>Logging for ${nice(UI.logDate)}. Pick an exercise.</span><button class="btn sm" data-act="logtoday">Back to today</button></div>`:""}
@@ -507,7 +507,7 @@ document.addEventListener("click",async ev=>{
       if(P&&!playerEl.hidden)renderPlayer();else refreshSheet();break}
     case "delentry":S.days[b.dataset.d].entries.splice(+b.dataset.i,1);saveDay(b.dataset.d);render();break;
     case "tg-hl":case "tg-slow":{const k=a==="tg-hl"?"hl":"slow";UI[k]=!UI[k];b.setAttribute("aria-pressed",UI[k]);
-      const cv=b.closest(".stage,.pfig").querySelector("canvas");if(UI[k])cv.dataset[k]="1";else delete cv.dataset[k];break}
+      const cv=b.closest(".stage,.pfig").querySelector("canvas");if(k==="hl")cv.dataset.hl=UI.hl?"1":"0";else if(UI.slow)cv.dataset.slow="1";else delete cv.dataset.slow;break}
     case "rest-add":R.end+=15000;tickRest();break;
     case "rest-skip":stopRest(true);break;
     case "anyway":UI.anyway=true;render();break;
