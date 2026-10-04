@@ -21,6 +21,16 @@ Then open `http://anujrpi.local:4320/` from any phone or laptop on the home netw
 
 The installer registers a service called `exercise-studio` that starts on boot. To use a different port: `PORT=4400 bash install.sh`.
 
+## HTTPS over Tailscale (needed for offline use)
+
+The app can only keep an offline copy on your phone when it is opened over HTTPS. Tailscale provides that:
+
+```bash
+tailscale serve --bg --https=8446 http://127.0.0.1:4320
+```
+
+Then open `https://anujrpi.tail549492.ts.net:8446/` from any device signed in to your tailnet. This is tailnet-only (not Funnel) and survives reboots. To turn it off: `tailscale serve --https=8446 off`.
+
 ## Update
 
 ```bash
