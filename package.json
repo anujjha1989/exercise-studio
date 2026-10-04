@@ -1,0 +1,8 @@
+{
+  "name": "exercise-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Home workout app: animated exercise demos, daily sessions, set logging and goal progress.",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
