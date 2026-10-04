@@ -1,6 +1,13 @@
 # Exercise Studio
 
-A home workout app for the Raspberry Pi: 25 exercises with animated demos (bodyweight and dumbbells), a daily session built around your goal, set and time logging, and progress tracking.
+A home workout app for the Raspberry Pi.
+
+- 54 exercises (bodyweight and dumbbells) with animated pictogram demos, muscle highlighting and slow motion, plus your own custom exercises
+- A weekly programme built from your goal, training days and focus areas
+- Guided workout mode with rest timer, and suggestions for when to add reps or weight
+- Logging for sets, time, body weight, measurements and progress photos
+- Progress page: weekly verdict, 12-week calendar, sets per body area, personal bests
+- CSV export, daily backups, restore, and offline logging that syncs when the Pi is back
 
 ## Install on the Pi
 
@@ -24,9 +31,11 @@ cd ~/exercise-studio && bash update.sh
 
 | Path | What it is |
 | --- | --- |
-| `public/index.html` | The whole app (screens, exercise library, animations) |
-| `server.js` | Small Node server, no dependencies; serves the app and saves the log |
-| `data/state.json` | Your workout log, goals and weigh-ins. Not in git. Copy this file to back up. |
+| `public/` | The app: `index.html`, `app.css`, `app.js`, `data.js` (exercise library), `figure.js` (animations) |
+| `server.js` | Small Node server, no dependencies; serves the app and saves your data |
+| `data/state.json` | Workout log, goals, weigh-ins and measurements. Not in git. |
+| `data/photos/` | Progress photos. Not in git. |
+| `data/backups/` | One copy of `state.json` per day, last 30 kept. Not in git. |
 
 ## Run without installing
 
