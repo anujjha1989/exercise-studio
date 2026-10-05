@@ -18,7 +18,7 @@ const $=id=>document.getElementById(id);
 const main=$("main"),sheet=$("sheet"),playerEl=$("player");
 
 /* ================= state + sync ================= */
-const defProfile=()=>({set:false,goal:"muscle",focus:[],startKg:null,targetKg:null,days:[0,1,3,4],created:TODAY,weigh:[],measures:[],dbs:[],custom:[],swaps:{},experience:"beginner",minutes:30,chair:false,lowImpact:true,excluded:[]});
+const defProfile=()=>({set:false,goal:"muscle",focus:[],startKg:null,targetKg:null,days:[0,1,3,4],created:TODAY,weigh:[],measures:[],dbs:[],custom:[],swaps:{},experience:"beginner",minutes:45,chair:true,hasDumbbells:true,lowImpact:false,excluded:[]});
 const S={profile:defProfile(),days:{}};
 let D={profile:false,days:{}};
 let online=false,syncing=false,storageError=false,editGeneration=0;
@@ -29,7 +29,7 @@ function fixProfile(p){
   if(p&&!p.days&&p.weekly)o.days=({1:[0],2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,4,5],6:[0,1,2,3,4,5],7:[0,1,2,3,4,5,6]})[p.weekly]||[0,1,3,4];
   o.days=[...new Set(Array.isArray(o.days)?o.days:[0,2,4])].filter(d=>Number.isInteger(d)&&d>=0&&d<7).sort((a,b)=>a-b);if(!o.days.length)o.days=[0,2,4];
   for(const key of ["focus","weigh","measures","dbs","custom","excluded"])if(!Array.isArray(o[key]))o[key]=[];
-  o.minutes=[15,20,30,45,60].includes(o.minutes)?o.minutes:30;
+  o.minutes=[15,20,30,45,60].includes(o.minutes)?o.minutes:45;
   if(!["beginner","experienced"].includes(o.experience))o.experience="beginner";
   return o;
 }
@@ -514,9 +514,10 @@ function vSetup(){
   <div class="card stack"><h3 class="wide">Make the plan fit you</h3><div class="fields">
     <label class="f">Experience<select data-pref="experience"><option value="beginner" ${p.experience==="beginner"?"selected":""}>Beginner · 2 sets</option><option value="experienced" ${p.experience==="experienced"?"selected":""}>Experienced</option></select></label>
     <label class="f">Session length<select data-pref="minutes">${[15,20,30,45,60].map(v=>`<option value="${v}" ${p.minutes===v?"selected":""}>${v} minutes</option>`).join("")}</select></label></div>
+    <label class="check"><input type="checkbox" data-pref="hasDumbbells" ${p.hasDumbbells?"checked":""}> I have dumbbells</label>
     <label class="check"><input type="checkbox" data-pref="chair" ${p.chair?"checked":""}> I have a sturdy chair or bench</label>
     <label class="check"><input type="checkbox" data-pref="lowImpact" ${p.lowImpact?"checked":""}> Prefer low-impact exercises</label>
-    <p class="sm mute">Dumbbell-only exercises are included after you add your weights below. Exclusions apply to your next workout; an in-progress plan stays fixed.</p>
+    <p class="sm mute">List your dumbbell weights below so suggestions only use weights you own. Exclusions apply to your next workout; an in-progress plan stays fixed.</p>
     <details><summary>Exercises to leave out</summary><div class="exclude-list">${EX.map(e=>`<label class="check"><input type="checkbox" data-exclude="${e.id}" ${p.excluded.includes(e.id)?"checked":""}> ${esc(e.name)}</label>`).join("")}</div></details></div>
   <div class="card stack"><h3 class="wide">Training days</h3>
     <div class="chips">${WD.map((n,i)=>`<button class="chip" data-act="tday" data-v="${i}" aria-pressed="${p.days.includes(i)}">${n}</button>`).join("")}</div>

@@ -12,7 +12,7 @@ function client(fetch){
 }
 test('generated plans obey selected equipment and freeze targets during logging',()=>{
   const c=client(async()=>({ok:true,json:async()=>({revision:1})}));
-  c.run('S.profile=fixProfile({dbs:[],chair:false,experience:"beginner",minutes:15,lowImpact:true});');
+  c.run('S.profile=fixProfile({dbs:[],hasDumbbells:false,chair:false,experience:"beginner",minutes:15,lowImpact:true});');
   assert.equal(c.run('buildSession(0).list.every(x=>Workout.eligible(exById(x.id),S.profile))'),true);
   assert.equal(c.run('buildSession(0).list.some(x=>exById(x.id).eq==="db")'),false);
   c.run('const sess=buildSession(0);const frozen=snapshotPlan(sess);S.days[TODAY]={entries:[{ex:sess.list[0].id,sets:[{r:8}]}],plan:frozen};S.profile.experience="experienced";');

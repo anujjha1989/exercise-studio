@@ -1,5 +1,6 @@
 // A complete versioned shell: never mix old scripts with a new document.
-const CACHE = "exercise-studio-v5";
+// The server replaces this name with one derived from the app files (see release-stamp.js).
+const CACHE = "exercise-studio-dev";
 const SHELL = ["./", "index.html", "app.css", "workout.js", "figure-math.js", "boot.mjs", "vendor/three.module.js", "vendor/three.core.js", "fonts/archivo.ttf", "fonts/azeret-mono.ttf", "data.js", "figure.js", "app.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 function valid(response, url) {
   if (!response.ok || response.redirected) return false;

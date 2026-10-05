@@ -1,7 +1,7 @@
 const test=require('node:test');const assert=require('node:assert/strict');const vm=require('node:vm');const fs=require('node:fs');
 function worker(fetch){
   const events={},stored=new Map(),deleted=[];
-  const context={URL,Response,Error,Promise,fetch,self:{registration:{scope:'https://pi.test/exercise/'},addEventListener:(name,fn)=>events[name]=fn},caches:{open:async()=>({put:async(k,v)=>stored.set(k,v),match:async k=>stored.get(k)}),keys:async()=>['other-app-cache','exercise-studio-v3','exercise-studio-v4','exercise-studio-v5'],delete:async k=>deleted.push(k)}};
+  const context={URL,Response,Error,Promise,fetch,self:{registration:{scope:'https://pi.test/exercise/'},addEventListener:(name,fn)=>events[name]=fn},caches:{open:async()=>({put:async(k,v)=>stored.set(k,v),match:async k=>stored.get(k)}),keys:async()=>['other-app-cache','exercise-studio-v3','exercise-studio-v4','exercise-studio-dev'],delete:async k=>deleted.push(k)}};
   vm.runInNewContext(fs.readFileSync('public/sw.js','utf8'),context);return {events,stored,deleted};
 }
 test('a 401 or HTML fallback cannot replace the offline shell',async()=>{

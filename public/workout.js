@@ -2,7 +2,7 @@
 (function(root){
   "use strict";
   function eligible(e,p){
-    return !(e.eq==="db"&&!p.dbs.length) &&
+    return !(e.eq==="db"&&!(p.hasDumbbells||p.dbs.length)) &&
       !(e.prop&&e.prop.chair&&!p.chair) &&
       !(p.experience==="beginner"&&e.level==="advanced") &&
       !(p.lowImpact&&e.impact==="high") && !(p.excluded||[]).includes(e.id);
