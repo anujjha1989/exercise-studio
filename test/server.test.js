@@ -30,7 +30,7 @@ test('archive includes photos and current state; assets have correct bytes and M
   const names=execFileSync('tar',['-tzf',file],{encoding:'utf8'});assert.match(names,/state.json/);assert.ok(names.includes('photos/'+photo.name));
   const packed=JSON.parse(execFileSync('tar',['-xOzf',file,'state.json'],{encoding:'utf8'}));assert.equal(packed.profile.goal,'muscle');
   const icon=await request('icon-512.png');assert.match(icon.headers.get('content-type'),/image\/png/);assert.deepEqual(Buffer.from(await icon.arrayBuffer()),fs.readFileSync(path.join(__dirname,'../public/icon-512.png')));
-  assert.equal((await (await request('api/health')).json()).version,'1.1.0');
+  assert.equal((await (await request('api/health')).json()).version,require('../package.json').version);
   assert.ok(fs.readdirSync(path.join(dir,'backups')).some(f=>f.endsWith('.tar.gz')));
 });
 test('invalid nested logs are rejected and restore cannot bypass revision checks',async()=>{

@@ -83,4 +83,6 @@ Setup offers a JSON log backup for in-app restore and a `.tar.gz` archive contai
 
 `npm run check` parses all source JavaScript. `npm test` covers completion, legacy records, both sides, pause duration, equipment/impact/time filtering, strength and weight trends, concurrent writes/deletes, restore conflicts, nested log validation, photo archives, asset types and offline cache rejection. CI runs both commands plus a shell syntax check. Browser tests use disposable local data; live user data is never a test fixture.
 
+The offline cache name is derived from the app files by `release-stamp.js` when the server starts, so any release that changes a file refreshes the copy on your phone automatically (after the app is fully closed and reopened).
+
 The browser boots through `public/boot.mjs`. The editable renderer and pose mapping are `public/figure.js` and `public/figure-math.js`. Three.js is pinned in `package-lock.json`; reproduce the committed browser modules with `npm ci --ignore-scripts && npm run stage-assets`. CI checks these generated assets against the committed files. Fonts are bundled locally with their OFL licenses, so the offline shell has no external font dependency.

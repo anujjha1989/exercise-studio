@@ -7,6 +7,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { spawn, spawnSync } = require("child_process");
 const VERSION = require("./package.json").version;
+const { serviceWorker } = require("./release-stamp");
 
 const PORT = Number(process.env.PORT) || 4320;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
@@ -15,6 +16,7 @@ const PHOTOS = path.join(DATA_DIR, "photos");
 const BACKUPS = path.join(DATA_DIR, "backups");
 const PUBLIC = path.join(__dirname, "public");
 const KEEP_BACKUPS = 30;
+const SW = serviceWorker(PUBLIC); // stamped once at start; the updater restarts the server on every release
 
 for (const d of [DATA_DIR, PHOTOS, BACKUPS]) fs.mkdirSync(d, { recursive: true });
 let state = { profile: null, days: {}, revisions: { profile: 0, days: {} } };
@@ -175,6 +177,7 @@ http.createServer((req, res) => {
     if (!PHOTO.test(name)) return send(res, 404, "Not found", "text/plain");
     return fs.readFile(path.join(PHOTOS, name), (err, data) => err ? send(res, 404, "Not found", "text/plain") : send(res, 200, data, "image/jpeg", { "Cache-Control": "private, max-age=31536000" }));
   }
+  if (url === "/sw.js") return send(res, 200, SW, TYPES[".js"]);
   let rel;
   try { rel = decodeURIComponent(url); } catch (e) { return send(res, 400, "Bad request", "text/plain"); }
   const file = path.normalize(path.join(PUBLIC, rel === "/" ? "index.html" : rel));

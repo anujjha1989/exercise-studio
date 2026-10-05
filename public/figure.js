@@ -5,26 +5,38 @@
 const DEMO=(()=>{
   const T=THREE,V=(a)=>new T.Vector3(...a),UP=new T.Vector3(0,1,0);
   const sphere=new T.SphereGeometry(1,24,16),box=new T.BoxGeometry(1,1,1),cylinder=new T.CylinderGeometry(1,1,1,20);
-  const grey=new T.MeshStandardMaterial({color:0xb6bbc2,roughness:.74,metalness:.08});
-  const red=new T.MeshStandardMaterial({color:0xe86a5b,roughness:.8});
-  const helper=new T.MeshStandardMaterial({color:0xeeb6aa,roughness:.8});
+  // Fine lines running pole to pole on every muscle read as fibres, like an anatomical drawing.
+  function fibres(){
+    const c=document.createElement('canvas');c.width=256;c.height=8;const g=c.getContext('2d');
+    g.fillStyle='#fff';g.fillRect(0,0,256,8);
+    for(let x=0;x<256;x+=2){const v=150+Math.round(105*Math.abs(Math.sin(x*12.9898)*43758.5453%1));g.fillStyle='rgb('+v+','+v+','+v+')';g.fillRect(x,0,1+(x%6===0?1:0),8)}
+    const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(3,1);t.colorSpace=T.SRGBColorSpace;return t;
+  }
+  const fibre=fibres(),bump=fibres();bump.colorSpace=T.NoColorSpace;
+  const muscle=color=>new T.MeshStandardMaterial({color,roughness:.62,metalness:.04,map:fibre,bumpMap:bump,bumpScale:1.4});
+  const grey=muscle(0xd3d7dc),red=muscle(0xf0563a),helper=muscle(0xf3b7a6);
+  const skin=new T.MeshStandardMaterial({color:0xcfd3d8,roughness:.7,metalness:.04});
+  const contour=new T.MeshBasicMaterial({color:0x4a5059,side:T.BackSide});
   const dark=new T.MeshStandardMaterial({color:0x17191e,roughness:.86});
   const steel=new T.MeshStandardMaterial({color:0x737b83,roughness:.36,metalness:.65});
   const mat=new T.MeshStandardMaterial({color:0xe5e9ee,roughness:1});
-  const skinDetail=new T.MeshStandardMaterial({color:0x969da6,roughness:.85});
+  const skinDetail=new T.MeshStandardMaterial({color:0x8a919a,roughness:.85});
   const scene=new T.Scene();scene.background=new T.Color(0xffffff);
-  scene.add(new T.HemisphereLight(0xffffff,0x858a91,1.2));
-  const key=new T.DirectionalLight(0xffffff,2.3);key.position.set(-70,130,90);key.castShadow=true;
+  scene.add(new T.HemisphereLight(0xffffff,0x9aa0a8,1.25));
+  const key=new T.DirectionalLight(0xffffff,1.9);key.position.set(-70,130,90);key.castShadow=true;
   key.shadow.mapSize.set(1024,1024);Object.assign(key.shadow.camera,{left:-90,right:90,top:90,bottom:-90,near:1,far:350});key.shadow.bias=-.0005;scene.add(key);
-  const fill=new T.DirectionalLight(0xeaf1ff,1);fill.position.set(80,60,-100);scene.add(fill);
+  const fill=new T.DirectionalLight(0xeaf1ff,.7);fill.position.set(80,60,-100);scene.add(fill);
   const ground=new T.Mesh(new T.PlaneGeometry(240,240),new T.ShadowMaterial({opacity:.16}));ground.rotation.x=-Math.PI/2;ground.position.y=-2;ground.receiveShadow=true;scene.add(ground);
   const camera=new T.OrthographicCamera(-60,60,50,-50,.1,600);
   let renderer=null,failed=false;
-  const meshes=new Map();
+  const meshes=new Map(),LINE=.34;
   function put(name,geometry,material,position,scale,rotation){
     let mesh=meshes.get(name);
-    if(!mesh){mesh=new T.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);meshes.set(name,mesh)}
-    mesh.visible=true;mesh.material=material;mesh.position.copy(position);mesh.scale.set(...scale);mesh.quaternion.copy(rotation||new T.Quaternion());return mesh;
+    if(!mesh){mesh=new T.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);meshes.set(name,mesh);
+      // A slightly larger back-facing shell draws the dark contour line around every form.
+      const shell=new T.Mesh(geometry,contour);mesh.add(shell);mesh.userData.shell=shell}
+    mesh.visible=true;mesh.material=material;mesh.position.copy(position);mesh.scale.set(...scale);mesh.quaternion.copy(rotation||new T.Quaternion());
+    if(geometry===torso)mesh.userData.shell.scale.set(1.035,1.01,1.07);else mesh.userData.shell.scale.set((scale[0]+LINE)/scale[0],(scale[1]+LINE)/scale[1],(scale[2]+LINE)/scale[2]);return mesh;
   }
   function ell(name,pos,scale,material,rotation){return put(name,sphere,material,pos,scale,rotation)}
   function bone(name,a,b,width,depth,material){
@@ -35,7 +47,7 @@ const DEMO=(()=>{
   function torsoGeometry(){
     const rings=[[0,7.5,4.8],[.12,7,4.6],[.26,6.2,3.8],[.4,6.7,4],[.57,8.6,4.6],[.72,10.4,5.2],[.84,10.7,5],[.94,9.6,4.1],[1,6,3.2],[1.05,3,2.7]],verts=[],indices=[];
     rings.forEach(([h,w,d])=>{for(let i=0;i<48;i++){const angle=i/48*Math.PI*2;verts.push(Math.cos(angle)*w,h*28,Math.sin(angle)*d)}});
-    for(let r=0;r<rings.length-1;r++)for(let i=0;i<48;i++){const a=r*48+i,b=r*48+(i+1)%48,c=a+48,d=b+48;indices.push(a,b,c,b,d,c)}
+    for(let r=0;r<rings.length-1;r++)for(let i=0;i<48;i++){const a=r*48+i,b=r*48+(i+1)%48,c=a+48,d=b+48;indices.push(a,c,b,b,c,d)}
     const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(verts,3));geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
   }
   const torso=torsoGeometry();
@@ -49,61 +61,96 @@ const DEMO=(()=>{
     if(['deadlift','singlerdl'].includes(ex.id))primary=new Set(['hamstrings','glutes']);
     if(['bridge','donkey'].includes(ex.id))primary=new Set(['glutes']);
     const second=new Set((ex.also||[]).flatMap(g=>({chest:['chest'],back:['back'],shoulders:['shoulders'],arms:['biceps','triceps'],core:['abs'],legs:['quads','glutes']})[g]||[]));
+    if(ex.g==='arms'&&ex.mv==='pull')second.add('forearms');if(ex.g==='legs'&&!primary.has('hamstrings'))second.add('calves');
     const tone=part=>!hl?grey:primary.has(part)?red:second.has(part)?helper:grey;
-    put('torso',torso,grey,hip,[1,height,1],orientation);
-    // Pectorals, serratus, abdominal sections and back are independent surfaces.
+    put('torso',torso,skin,hip,[1,height,1],orientation);
+    // Trunk: every visible muscle is its own surface so it can be shaded and highlighted separately.
     for(const side of [-1,1]){
-      ell('pec'+side,local(side*4.65,21,4.35),[4.6,3.65*height,1.7],tone('chest'),orientation);
-      ell('lat'+side,local(side*7.5,15.8,-3),[2.8,7.5*height,2.2],tone('back'),orientation);
-      ell('scapula'+side,local(side*4.8,22,-4.15),[4.1,4.5*height,1.25],tone('back'),orientation);
-      for(let i=0;i<3;i++){
-        ell('abs'+side+i,local(side*1.8,9+i*3.5,3.7),[1.72,1.65*height,.72],tone('abs'),orientation);
-        ell('serratus'+side+i,local(side*(6.6-i*.4),16.5+i*2.1,3.9),[1.35,1*height,.55],tone('abs'),orientation);
-      }
-      ell('oblique'+side,local(side*4.3,10.5,2.75),[1.7,4.3*height,1.2],tone('abs'),orientation);
+      ell('trap'+side,local(side*4.2,27.6,-1.6),[5.2,2.3*height,2.9],tone('back'),orientation);
+      ell('pecU'+side,local(side*4.9,22.6,4.2),[4.7,2.5*height,1.75],tone('chest'),orientation);
+      ell('pecL'+side,local(side*4.5,20.2,4.5),[4.3,2.6*height,1.9],tone('chest'),orientation);
+      ell('lat'+side,local(side*7.6,15.6,-2.6),[2.9,7.6*height,2.5],tone('back'),orientation);
+      ell('scapula'+side,local(side*4.9,22,-4.2),[4.2,4.4*height,1.3],tone('back'),orientation);
+      ell('erector'+side,local(side*1.9,8.5,-3.9),[1.7,6.2*height,1.2],tone('back'),orientation);
+      for(let i=0;i<4;i++)ell('abs'+side+i,local(side*1.75,5.6+i*3.25,3.9-(i===0?.3:0)),[1.7,1.5*height,.8],tone('abs'),orientation);
+      for(let i=0;i<3;i++)ell('serratus'+side+i,local(side*(6.9-i*.45),15.8+i*2,3.6),[1.5,.95*height,.6],tone('abs'),orientation);
+      ell('oblique'+side,local(side*4.7,9.6,2.6),[1.9,4.6*height,1.5],tone('abs'),orientation);
+      bone('clavicle'+side,local(side*1,27.4,2.7),local(side*8.2,27.9,1.4),.62,.62,skinDetail);
+      bone('scm'+side,local(side*.9,27.6,2.4),local(side*3.4,33.2,-.4),.7,.7,skin);
     }
     const head=local(0,35.1,.1);
-    bone('neck',neck,local(0,31.2,0),2.8,2.6,grey);
-    ell('head',head,[4.4,5.4,4],grey,orientation);
-    ell('hair',head.clone().addScaledVector(up,.3),[4.48,5.35,4.08],dark,orientation).geometry=scalp;
-    ell('jaw',local(0,31.9,2.2),[3.2,2,2],grey,orientation);
-    ell('nose',local(0,34.8,4.25),[.75,1.3,1.05],grey,orientation);
+    bone('neck',neck,local(0,31.2,0),2.8,2.6,skin);
+    ell('head',head,[4.3,5.3,4.1],skin,orientation);
+    put('hair',scalp,dark,head.clone().addScaledVector(up,.35),[4.42,5.3,4.2],orientation);
+    ell('jaw',local(0,31.9,2.1),[3.1,2,2.1],skin,orientation);
+    ell('nose',local(0,34.6,4.3),[.7,1.3,1],skin,orientation);
+    ell('mouth',local(0,32.3,3.95),[1.2,.16,.3],skinDetail,orientation);
     for(const side of [-1,1]){
-      ell('ear'+side,local(side*4.4,34.5,.1),[.62,1.25,.75],grey,orientation);
-      ell('brow'+side,local(side*1.7,36.25,3.6),[1.1,.28,.5],skinDetail,orientation);
-      ell('eye'+side,local(side*1.7,35.8,3.65),[.55,.2,.25],dark,orientation);
+      ell('ear'+side,local(side*4.3,34.4,.1),[.6,1.25,.8],skin,orientation);
+      ell('brow'+side,local(side*1.7,36.15,3.7),[1.15,.26,.5],dark,orientation);
+      ell('eye'+side,local(side*1.7,35.6,3.8),[.55,.22,.25],dark,orientation);
     }
-    ell('shorts',hip.clone().addScaledVector(up,-.2),[7.7,3.4,5.05],dark,orientation);
+    ell('shorts',hip.clone().addScaledVector(up,-.2),[7.8,3.5,5.1],dark,orientation);
     for(let i=0;i<2;i++){
-      const [h,k,f]=p.legs[i].map(V),thigh=k.clone().sub(h),thighUp=thigh.clone().normalize(),legFront=front;
-      bone('thigh'+i,h,k,4.5,4.4,grey);
-      const center=h.clone().lerp(k,.47),q=new T.Quaternion().setFromUnitVectors(UP,thighUp);
-      ell('quad'+i,center.clone().addScaledVector(legFront,2.2),[3.6,thigh.length()*.41,2.1],tone('quads'),q);
-      ell('outerquad'+i,center.clone().addScaledVector(right,i?-2:2).addScaledVector(legFront,.7),[2.5,thigh.length()*.36,2.3],tone('quads'),q);
-      ell('hamstring'+i,center.clone().addScaledVector(legFront,-2.3),[3,thigh.length()*.38,1.8],tone('hamstrings'),q);
-      ell('glute'+i,h.clone().addScaledVector(front,-2.9).addScaledVector(up,-1.8),[4,4.1,2.7],tone('glutes'),orientation);
-      bone('shortleg'+i,h,h.clone().lerp(k,.25),4.7,4.8,dark);
-      ell('knee'+i,k,[2.7,2.5,2.8],grey);
-      bone('shin'+i,k,f,2.2,2.1,grey);
-      const calf=k.clone().lerp(f,.38),shinLength=k.distanceTo(f),sq=new T.Quaternion().setFromUnitVectors(UP,f.clone().sub(k).normalize());
-      ell('calf'+i,calf.clone().addScaledVector(front,-1.2),[2.85,shinLength*.28,2.2],grey,sq);
-      ell('foot'+i,f.clone().add(new T.Vector3(0,0,2.3)),[2.3,1.8,4.7],grey);
+      const [h,k,f]=p.legs[i].map(V),thigh=k.clone().sub(h),thighUp=thigh.clone().normalize(),out=i?-1:1,TL=thigh.length();
+      // Local frame of the thigh so the muscles stay on the right faces as the leg swings.
+      let tf=front.clone().addScaledVector(thighUp,-front.dot(thighUp));if(tf.lengthSq()<.02)tf=up.clone().addScaledVector(thighUp,-up.dot(thighUp));tf.normalize();
+      const ts=thighUp.clone().cross(tf).normalize().multiplyScalar(-1),q=new T.Quaternion().setFromUnitVectors(UP,thighUp),on=(t,s,fz)=>h.clone().lerp(k,t).addScaledVector(ts,s*out).addScaledVector(tf,fz);
+      bone('thigh'+i,h,k,3.9,3.9,skin);
+      ell('rectus'+i,on(.45,0,2.5),[2.3,TL*.4,1.9],tone('quads'),q);
+      ell('vastusL'+i,on(.5,2.5,1.2),[2.2,TL*.36,2.2],tone('quads'),q);
+      ell('vastusM'+i,on(.74,-1.9,1.7),[1.9,TL*.2,1.7],tone('quads'),q);
+      ell('adductor'+i,on(.3,-2.4,-.2),[2,TL*.3,2.4],skin,q);
+      ell('hamL'+i,on(.5,1.5,-2.4),[1.9,TL*.38,1.7],tone('hamstrings'),q);
+      ell('hamM'+i,on(.5,-1.3,-2.5),[1.8,TL*.37,1.6],tone('hamstrings'),q);
+      ell('glute'+i,h.clone().addScaledVector(front,-3).addScaledVector(up,-1.6).addScaledVector(right,out*.6),[4.1,4.2,2.9],tone('glutes'),orientation);
+      bone('shortleg'+i,h,h.clone().lerp(k,.27),4.9,5,dark);
+      ell('knee'+i,k,[2.5,2.4,2.6],skin);
+      const shinUp=f.clone().sub(k).normalize();let sf=tf.clone().addScaledVector(shinUp,-tf.dot(shinUp));if(sf.lengthSq()<.02)sf=front.clone();sf.normalize();
+      const ss=shinUp.clone().cross(sf).normalize().multiplyScalar(-1),SL=k.distanceTo(f),sq=new T.Quaternion().setFromUnitVectors(UP,shinUp),sn=(t,s,fz)=>k.clone().lerp(f,t).addScaledVector(ss,s*out).addScaledVector(sf,fz);
+      ell('patella'+i,k.clone().addScaledVector(sf,2),[1.5,1.6,.9],skinDetail,sq);
+      bone('shin'+i,k,f,2,2,skin);
+      ell('calfL'+i,sn(.3,1,-1.5),[1.8,SL*.27,1.9],tone('calves'),sq);
+      ell('calfM'+i,sn(.33,-1,-1.6),[1.9,SL*.29,2],tone('calves'),sq);
+      ell('tibialis'+i,sn(.42,.7,1.1),[1.2,SL*.33,1.1],skin,sq);
+      // Foot: heel, arch and toes, pointing the way the shin faces.
+      const toe=sf.clone().addScaledVector(UP,-sf.y);if(toe.lengthSq()<.05)toe.copy(front);toe.normalize();
+      const fq=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,0,1),toe);
+      ell('heel'+i,f.clone().addScaledVector(toe,-.6).add(new T.Vector3(0,.2,0)),[1.9,1.8,2],skin,fq);
+      ell('foot'+i,f.clone().addScaledVector(toe,2.8).add(new T.Vector3(0,-.3,0)),[2.1,1.25,3.6],skin,fq);
+      ell('toes'+i,f.clone().addScaledVector(toe,6).add(new T.Vector3(0,-.7,0)),[2.2,.8,1.3],skinDetail,fq);
     }
     for(let i=0;i<2;i++){
-      const [s,e,h]=p.arms[i].map(V),q=new T.Quaternion().setFromUnitVectors(UP,e.clone().sub(s).normalize()),center=s.clone().lerp(e,.48),upperLength=s.distanceTo(e);
-      bone('upperarm'+i,s,e,2.8,2.8,grey);
-      ell('deltoid'+i,s,[4,4.4,3.6],tone('shoulders'),orientation);
-      ell('biceps'+i,center.clone().addScaledVector(front,1.7),[2.7,upperLength*.39,1.8],tone('biceps'),q);
-      ell('triceps'+i,center.clone().addScaledVector(front,-1.4),[2.6,upperLength*.42,1.9],tone('triceps'),q);
-      ell('elbow'+i,e,[2.35,2.1,2.2],grey);
-      bone('forearm'+i,e,h,2.2,2.25,grey);
-      bone('forearmflex'+i,e.clone().lerp(h,.05).addScaledVector(front,1),e.clone().lerp(h,.72).addScaledVector(front,1),1.55,1.1,grey);
-      ell('hand'+i,h,[1.95,2.9,1.35],grey,q);
-      for(let finger=0;finger<3;finger++)ell('finger'+i+finger,h.clone().addScaledVector(right,(finger-1)*.95).addScaledVector(up,-1),[.5,1.9,.72],grey,q);
+      const [s,e,h]=p.arms[i].map(V),armUp=e.clone().sub(s).normalize(),q=new T.Quaternion().setFromUnitVectors(UP,armUp),UL=s.distanceTo(e),out=i?-1:1;
+      let af=front.clone().addScaledVector(armUp,-front.dot(armUp));if(af.lengthSq()<.02)af=up.clone().addScaledVector(armUp,-up.dot(armUp));af.normalize();
+      const as=armUp.clone().cross(af).normalize().multiplyScalar(-1),on=(t,sd,fz)=>s.clone().lerp(e,t).addScaledVector(as,sd*out).addScaledVector(af,fz);
+      bone('upperarm'+i,s,e,2.5,2.5,skin);
+      ell('deltF'+i,s.clone().addScaledVector(front,1.5).addScaledVector(up,-.3),[3.2,4.1,2.6],tone('shoulders'),orientation);
+      ell('deltS'+i,s.clone().addScaledVector(right,out*1.3).addScaledVector(up,-.2),[3.2,4.4,3.3],tone('shoulders'),orientation);
+      ell('deltR'+i,s.clone().addScaledVector(front,-1.6).addScaledVector(up,-.4),[3.1,3.9,2.5],tone('shoulders'),orientation);
+      ell('biceps'+i,on(.52,0,1.6),[2.4,UL*.36,1.9],tone('biceps'),q);
+      ell('brachialis'+i,on(.72,1.5,.6),[1.3,UL*.2,1.3],tone('biceps'),q);
+      ell('tricepsL'+i,on(.45,1.2,-1.4),[1.9,UL*.38,1.8],tone('triceps'),q);
+      ell('tricepsM'+i,on(.5,-.9,-1.5),[1.8,UL*.36,1.7],tone('triceps'),q);
+      ell('elbow'+i,e,[2.1,2,2.1],skin);
+      const foreUp=h.clone().sub(e).normalize(),fqr=new T.Quaternion().setFromUnitVectors(UP,foreUp),FL=e.distanceTo(h);
+      let ff=af.clone().addScaledVector(foreUp,-af.dot(foreUp));if(ff.lengthSq()<.02)ff=front.clone().addScaledVector(foreUp,-front.dot(foreUp));ff.normalize();
+      const fs=foreUp.clone().cross(ff).normalize().multiplyScalar(-1),fo=(t,sd,fz)=>e.clone().lerp(h,t).addScaledVector(fs,sd*out).addScaledVector(ff,fz);
+      bone('forearm'+i,e,h,1.75,1.75,skin);
+      ell('brachiorad'+i,fo(.3,1.1,.5),[1.5,FL*.3,1.5],tone('forearms'),fqr);
+      ell('flexor'+i,fo(.34,-.9,.3),[1.6,FL*.32,1.6],tone('forearms'),fqr);
+      ell('extensor'+i,fo(.36,.2,-1),[1.3,FL*.3,1.2],tone('forearms'),fqr);
+      ell('wrist'+i,fo(.94,0,0),[1.5,1.2,1.2],skin,fqr);
+      ell('hand'+i,h,[1.9,2.4,1.25],skin,fqr);
+      ell('thumb'+i,h.clone().addScaledVector(fs,-1.9*out).addScaledVector(foreUp,.2),[.62,1.5,.7],skin,fqr);
+      for(let finger=0;finger<4;finger++)ell('finger'+i+finger,h.clone().addScaledVector(fs,(finger-1.5)*.92).addScaledVector(foreUp,2.2).addScaledVector(ff,.5),[.46,1.5,.6],skin,fqr);
       if(ex.db&&(!ex.singleBell||i===0)){
         const hand=ex.singleBell?V(p.arms[0][2]).lerp(V(p.arms[1][2]),.5):h;
         put('handle'+i,cylinder,steel,hand,[.85,10,.85],new T.Quaternion().setFromUnitVectors(UP,right));
-        for(const side of [-1,1])put('plate'+i+side,cylinder,dark,hand.clone().addScaledVector(right,side*5.8),[4.4,2.8,4.4],new T.Quaternion().setFromUnitVectors(UP,right));
+        for(const side of [-1,1]){
+          put('plate'+i+side,cylinder,dark,hand.clone().addScaledVector(right,side*5.6),[4.4,2.6,4.4],new T.Quaternion().setFromUnitVectors(UP,right));
+          put('cap'+i+side,cylinder,steel,hand.clone().addScaledVector(right,side*7.2),[1.5,.8,1.5],new T.Quaternion().setFromUnitVectors(UP,right));
+        }
       }
     }
     // Equipment is an actual 3D object and belongs only to matching exercises.
@@ -120,7 +167,7 @@ const DEMO=(()=>{
     const width=Math.max(1,Math.round(cv.clientWidth*Math.min(devicePixelRatio||1,2))),height=Math.max(1,Math.round(cv.clientHeight*Math.min(devicePixelRatio||1,2)));
     if(cv.width!==width||cv.height!==height){cv.width=width;cv.height=height}
     const context=cv.getContext('2d');
-    if(!renderer&&!failed){try{renderer=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFShadowMap;renderer.setPixelRatio(1);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05}catch(error){failed=true;console.warn('3D exercise demos unavailable',error)}}
+    if(!renderer&&!failed){try{renderer=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFShadowMap;renderer.setPixelRatio(1);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.NoToneMapping}catch(error){failed=true;console.warn('3D exercise demos unavailable',error)}}
     if(failed){context.fillStyle='#ffffff';context.fillRect(0,0,width,height);context.fillStyle='#374151';context.font=`${Math.max(12,width/24)}px sans-serif`;context.fillText('3D demo unavailable on this device',width*.05,height*.5);return}
     frame(ex,time,hl);
     const grounded=ex.poses.every(p=>p.n[1]>55),center=new T.Vector3(0,grounded?15:39,0),span=grounded?90:94,aspect=width/height;
