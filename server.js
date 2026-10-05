@@ -51,8 +51,9 @@ function backup(force) {
 
   const archive = path.join(BACKUPS, name.replace(/\.json$/, ".tar.gz"));
   const packed = spawnSync("tar", ["-czf", archive + ".tmp", "-C", DATA_DIR, "state.json", "photos"]);
-  if (packed.status !== 0) { try { fs.unlinkSync(archive + ".tmp"); } catch (_) {} throw new Error("Photo backup failed"); }
-  fs.renameSync(archive + ".tmp", archive);
+  // A failed photo archive must never block saving the log itself: keep the JSON snapshot and carry on.
+  if (packed.status !== 0) { try { fs.unlinkSync(archive + ".tmp"); } catch (_) {} console.error("Photo backup failed; kept the log snapshot only"); }
+  else fs.renameSync(archive + ".tmp", archive);
   fs.copyFileSync(FILE, dest);
   const all = fs.readdirSync(BACKUPS).filter(f => f.endsWith(".json")).sort();
   all.slice(0, Math.max(0, all.length - KEEP_BACKUPS)).forEach(f => { fs.unlinkSync(path.join(BACKUPS, f)); try { fs.unlinkSync(path.join(BACKUPS, f.replace(/\.json$/, ".tar.gz"))); } catch (_) {} });
