@@ -238,3 +238,17 @@ const EX=[
 /* which way each figure faces: flip = facing left or face-down; front = seen from the front */
 ["pushup","widepushup","inclinepushup","declinepushup","row","onearmrow","renegade","superman","yraise","pikepushup","kickback","dips","diamond","plank","birddog","climber","deadlift","singlerdl","donkey","bulgarian"].forEach(id=>{EX.find(e=>e.id===id).flip=1});
 ["sidelunge","skater"].forEach(id=>{EX.find(e=>e.id===id).front=1});
+
+// Source-owned demo and planning metadata, kept beside the exercise definitions.
+const ADVANCED=new Set(["declinepushup","renegade","pikepushup","diamond","burpee","squatjump","swing","thruster"]);
+const HIGH_IMPACT=new Set(["jacks","burpee","highknees","buttkicks","skater","squatjump"]);
+const UNILATERAL=new Set(["onearmrow","kickback","sideplank","lunge","sidelunge","bulgarian","singlerdl","donkey"]);
+const SINGLE_BELL=new Set(["goblet","sumo","pullover","triext","swing"]);
+const MUSCLES={pushup:["Pectorals"],widepushup:["Pectorals"],inclinepushup:["Pectorals"],declinepushup:["Pectorals"],floorpress:["Pectorals"],pullover:["Pectorals","Lats"],row:["Lats","Upper back"],onearmrow:["Lats"],renegade:["Lats"],shrug:["Trapezius"],curl:["Biceps"],hammer:["Biceps","Brachialis"],triext:["Triceps"],kickback:["Triceps"],skull:["Triceps"],dips:["Triceps"],diamond:["Triceps"],bridge:["Glutes"],donkey:["Glutes"],deadlift:["Hamstrings","Glutes"],singlerdl:["Hamstrings","Glutes"]};
+EX.forEach(e=>{
+  e.level=ADVANCED.has(e.id)?"advanced":"beginner";
+  e.impact=HIGH_IMPACT.has(e.id)?"high":"low";
+  e.unilateral=UNILATERAL.has(e.id);
+  e.singleBell=SINGLE_BELL.has(e.id);
+  e.muscles=MUSCLES[e.id]||[({chest:"Pectorals",back:"Back muscles",shoulders:"Deltoids",arms:"Arm muscles",core:"Abdominals",legs:"Quads and glutes",cardio:"Whole body"})[e.g]];
+});
