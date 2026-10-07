@@ -1,0 +1,12 @@
+name: iOS build
+on:
+  push:
+    paths: ['ios/**', '.github/workflows/ios.yml']
+  pull_request:
+    paths: ['ios/**', '.github/workflows/ios.yml']
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: xcodebuild -project ios/ExerciseStudio.xcodeproj -scheme ExerciseStudio -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
