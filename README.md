@@ -89,4 +89,4 @@ The browser boots through `public/boot.mjs`. The editable renderer and pose mapp
 
 ## iPhone companion
 
-`ios/ExerciseStudio.xcodeproj` contains the personal-use iPhone companion, with native settings and file sharing around this same Pi-served UI. See `ios/README.md` for signing, installation and device verification. The native project is generated from `ios/project.yml`; it does not introduce a second workout interface or require a Pi deployment.
+`ios/ExerciseStudio.xcodeproj` contains the personal-use native iPhone app, with SwiftUI workout screens and SceneKit demos sharing the Pi data API and canonical exercise rules. See `ios/README.md` for signing, installation and device verification. The native project is generated from `ios/project.yml`; it does not introduce a second workout interface or require a Pi deployment.

@@ -1,12 +1,17 @@
 name: iOS build
 on:
   push:
-    paths: ['ios/**', '.github/workflows/ios.yml']
+    paths: ['ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
   pull_request:
-    paths: ['ios/**', '.github/workflows/ios.yml']
+    paths: ['ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
 jobs:
   build:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/stage-ios.js
+      - run: git diff --exit-code -- ios/ExerciseStudio/Resources/shared-rules.js
       - run: xcodebuild -project ios/ExerciseStudio.xcodeproj -scheme ExerciseStudio -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build

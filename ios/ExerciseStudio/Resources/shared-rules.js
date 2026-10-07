@@ -1,0 +1,429 @@
+var window=this;
+/* Shared workout rules. Browser and tests use this same source. */
+(function(root){
+  "use strict";
+  function eligible(e,p){
+    return !(e.eq==="db"&&!(p.hasDumbbells||p.dbs.length)) &&
+      !(e.prop&&e.prop.chair&&!p.chair) &&
+      !(p.experience==="beginner"&&e.level==="advanced") &&
+      !(p.lowImpact&&e.impact==="high") && !(p.excluded||[]).includes(e.id);
+  }
+  function setCount(day,id){
+    const e=(day.entries||[]).find(e=>e.ex===id);
+    if(!e)return 0;
+    if(e.sets.some(s=>s.side)||day.plan&&day.plan.unilateral&&day.plan.unilateral.includes(id)){
+      // Older sets counted per side: retain them as paired sets.
+      const paired=e.sets.filter(s=>!s.side).length;
+      return paired+Math.min(e.sets.filter(s=>s.side==="left").length,e.sets.filter(s=>s.side==="right").length);
+    }
+    return e.sets.length;
+  }
+  function status(day){
+    if(!day||(day.entries||[]).every(e=>!e.sets.length))return day&&day.started?"started":"cancelled";
+    if(day.plan&&day.plan.ids.length){
+      return day.plan.ids.every(id=>setCount(day,id)>=day.plan.sets)?"completed":"partial";
+    }
+    // Do not silently infer completion from old or manually logged records.
+    return day.completed?"completed":"partial";
+  }
+  function elapsed(p,now=Date.now()){
+    return Math.max(0,(p.pausedAt||now)-p.t0-(p.pausedMs||0));
+  }
+  function estimatedMinutes(count,sets,rest){return Math.ceil((180+count*sets*(40+rest))/60);}
+  function fitTime(list,profile,scheme){
+    let remaining=profile.minutes*60-180;
+    return list.filter(e=>{const seconds=scheme.sets*(40+scheme.rest)*(e.unilateral?2:1);if(seconds>remaining)return false;remaining-=seconds;return true});
+  }
+  function trend(days,id){
+    return Object.keys(days).sort().flatMap(d=>{
+      const entries=days[d].entries.filter(e=>e.ex===id),sets=entries.flatMap(e=>e.sets);
+      if(!sets.length)return [];
+      const weighted=sets.some(s=>s.kg>0),timed=sets.some(s=>s.s>0);
+      // Display a measured best set, not an estimated one-rep maximum.
+      const best=sets.slice().sort((a,b)=>weighted?(b.kg||0)-(a.kg||0)||(b.r||0)-(a.r||0):timed?(b.s||0)-(a.s||0):(b.r||0)-(a.r||0))[0];
+      return [{d,v:weighted?best.kg:timed?best.s:best.r,r:best.r,unit:weighted?"kg":timed?"s":"reps"}];
+    });
+  }
+  function weightTrend(points){
+    return points.slice().sort((a,b)=>a.d.localeCompare(b.d)).map(point=>{
+      const end=Date.parse(point.d+"T00:00:00Z"),start=end-6*86400000;
+      const window=points.filter(p=>{const t=Date.parse(p.d+"T00:00:00Z");return t>=start&&t<=end});
+      return {d:point.d,v:Math.round(window.reduce((sum,p)=>sum+p.kg,0)/window.length*10)/10};
+    });
+  }
+  const api={eligible,setCount,status,elapsed,estimatedMinutes,fitTime,trend,weightTrend};
+  if(typeof module!=="undefined")module.exports=api;else root.Workout=api;
+})(typeof window!=="undefined"?window:this);
+
+/* Exercise poses lifted into a consistent 3D frame. Floor is y=0, front is z.
+   Shared with tests; no GPU/browser dependency. */
+(function(root){
+  'use strict';
+  const mix=(a,b,t)=>a.map((x,i)=>x+(b[i]-x)*t);
+  function full(p,e){return {...p,a2:p.a2||(e.mir?p.a.map(q=>[2*p.n[0]-q[0],q[1]]):p.a),l2:p.l2||(e.mir?p.l.map(q=>[2*p.p[0]-q[0],q[1]]):p.l)}}
+  const beat=e=>e.slow?1.6:e.fast?0.38:0.95;
+  function interpolate(e,time){
+    const u=Math.max(0,time)/beat(e)%e.poses.length,i=Math.floor(u),f=(1-Math.cos(Math.PI*(u-i)))/2;
+    const a=full(e.poses[i],e),b=full(e.poses[(i+1)%e.poses.length],e);
+    return {n:mix(a.n,b.n,f),p:mix(a.p,b.p,f),a:a.a.map((q,k)=>mix(q,b.a[k],f)),a2:a.a2.map((q,k)=>mix(q,b.a2[k],f)),l:a.l.map((q,k)=>mix(q,b.l[k],f)),l2:a.l2.map((q,k)=>mix(q,b.l2[k],f))};
+  }
+  function skeleton(e,time){
+    const p=interpolate(e,time),front=!!(e.mir||e.front),flip=e.flip?-1:1;
+    const world=(q,side=0)=>front?[q[0]-60,90-q[1],side]:[side,90-q[1],(q[0]-60)*flip];
+    const neck=world(p.n),hip=world(p.p),shoulder=mix(neck,hip,.1);
+    const arms=[p.a,p.a2].map((points,i)=>{
+      const sign=front?(p.a[0][0]<=p.a2[0][0]?-1:1)*(i?-1:1):(i?-1:1);
+      const start=[shoulder[0]+sign*9.4,shoulder[1],shoulder[2]];
+      return [start,world(points[0],front?0:sign*8),world(points[1],front?0:e.singleBell?0:sign*7)];
+    });
+    const legs=[p.l,p.l2].map((points,i)=>{
+      const sign=front?(p.l[0][0]<=p.l2[0][0]?-1:1)*(i?-1:1):(i?-1:1);
+      return [[hip[0]+sign*4.5,hip[1]-1,hip[2]],world(points[0],front?0:sign*4.8),world(points[1],front?0:sign*5.2)];
+    });
+    return {neck,hip,arms,legs,front,flip};
+  }
+  const api={interpolate,skeleton,beat};
+  if(typeof module!=='undefined')module.exports=api;else root.FigureMath=api;
+})(typeof window!=='undefined'?window:this);
+
+"use strict";
+/* Exercise library. Poses are joint positions on a 120 x 100 stage (floor at y = 90):
+   n = neck, p = hip, a = [elbow, hand], l = [knee, foot]; a2 / l2 are the far-side limbs. */
+const GROUPS={chest:"Chest",back:"Back",shoulders:"Shoulders",arms:"Arms",core:"Core",legs:"Legs & glutes",cardio:"Cardio"};
+const ST={n:[60,26],p:[60,54],a:[[60,40],[62,53]],l:[[61,72],[60,90]]};
+const FR={n:[60,26],p:[60,54],l:[[55,72],[53,90]]};
+const HINGE={n:[42,46],p:[68,56],l:[[66,74],[62,90]]};
+const LIE={n:[40,85],p:[70,85],l:[[84,68],[94,90]]};
+const SQ={n:[59,45],p:[49,70],l:[[70,71],[62,90]]};
+const PU_A={n:[40,66],p:[70,74],a:[[39,78],[38,90]],l:[[88,82],[104,90]]};
+const PU_B={n:[40,81],p:[70,83],a:[[52,76],[38,90]],l:[[88,86],[104,90]]};
+const sw=p=>({...p,a:p.a2,a2:p.a,l:p.l2,l2:p.l});
+const HK={n:[60,26],p:[60,54],a:[[55,40],[64,36]],a2:[[64,40],[60,52]],l:[[74,56],[72,74]],l2:[[61,72],[60,90]]};
+const BK={n:[60,26],p:[60,54],a:[[55,40],[64,36]],a2:[[64,40],[60,52]],l:[[62,72],[50,64]],l2:[[61,72],[60,90]]};
+const MC={n:[40,66],p:[70,72],a:[[39,78],[38,90]],a2:[[39,78],[38,90]],l:[[56,80],[68,88]],l2:[[88,81],[104,90]]};
+const BSQ={n:[62,58],p:[46,74],a:[[72,74],[76,90]],l:[[62,74],[50,90]]};
+const BIKE={n:[34,78],p:[60,86],a:[[28,72],[33,70]],a2:[[28,72],[33,70]],l:[[72,70],[84,74]],l2:[[80,80],[98,76]]};
+const BUG={n:[34,86],p:[60,86],a:[[36,72],[36,60]],a2:[[24,85],[12,85]],l:[[62,70],[76,70]],l2:[[78,84],[96,84]]};
+const FLUT={n:[30,86],p:[60,86],a:[[44,88],[56,88]],a2:[[44,88],[56,88]],l:[[78,80],[96,75]],l2:[[78,84],[96,87]]};
+const ALL4={n:[42,68],p:[70,68],a:[[42,80],[42,90]],l:[[70,88],[88,89]]};
+const BOX={n:[58,28],p:[58,56],l:[[66,72],[70,90]],l2:[[52,73],[46,90]]};
+const EX=[
+ /* ---- chest ---- */
+ {id:"pushup",name:"Push-up",g:"chest",mv:"push",also:["arms","shoulders","core"],eq:"bw",poses:[PU_A,PU_B],
+  steps:["Hands under shoulders, body in one straight line from head to heels.","Lower your chest to just above the floor, elbows about 45° from your sides.","Press the floor away until your arms are straight."],
+  tip:"Too hard? Drop your knees to the floor. Too easy? Take 3 seconds to lower."},
+ {id:"widepushup",name:"Wide push-up",g:"chest",mv:"push",also:["shoulders","arms"],eq:"bw",poses:[PU_A,PU_B],
+  steps:["Set your hands about one and a half shoulder-widths apart.","Lower your chest between your hands.","Press back up without letting your hips sag."],
+  tip:"The wider hand position shifts more of the work onto the chest."},
+ {id:"inclinepushup",name:"Incline push-up",g:"chest",mv:"push",also:["arms","shoulders"],eq:"bw",prop:{chair:[26,"l"]},
+  poses:[{n:[44,46],p:[70,60],a:[[42,57],[40,68]],l:[[88,76],[104,90]]},{n:[44,60],p:[70,69],a:[[55,58],[40,68]],l:[[88,80],[104,90]]}],
+  steps:["Put your hands on the edge of a sturdy chair or sofa.","Walk your feet back until your body is straight.","Lower your chest to the edge, then press away."],
+  tip:"The easiest push-up to start with. The higher your hands, the easier it gets."},
+ {id:"declinepushup",name:"Decline push-up",g:"chest",mv:"push",also:["shoulders","arms"],eq:"bw",prop:{chair:[84,"r"]},
+  poses:[{n:[36,64],p:[66,66],a:[[35,77],[34,90]],l:[[84,67],[98,68]]},{n:[36,81],p:[66,75],a:[[48,77],[34,90]],l:[[84,71],[98,68]]}],
+  steps:["Put your feet on a chair and your hands on the floor.","Lower your chest towards the floor.","Press back up, keeping your body rigid."],
+  tip:"Harder than a regular push-up and hits the upper chest. Master 15 regular ones first."},
+ {id:"floorpress",name:"Dumbbell floor press",g:"chest",mv:"push",also:["arms","shoulders"],eq:"db",db:1,
+  poses:[{...LIE,a:[[50,87],[50,73]]},{...LIE,a:[[46,72],[46,59]]}],
+  steps:["Lie on your back, knees bent, upper arms resting on the floor.","Press both dumbbells straight up over your chest.","Lower until your upper arms touch the floor, pause, repeat."],
+  tip:"The floor stops your elbows going too deep, which is kind to shoulders."},
+ {id:"pullover",name:"Dumbbell pullover",g:"chest",mv:"push",also:["back"],eq:"db",db:1,
+  poses:[{...LIE,a:[[28,78],[17,82]]},{...LIE,a:[[42,71],[44,58]]}],
+  steps:["Lie on your back holding one dumbbell with both hands over your chest.","Lower it in an arc behind your head, elbows slightly bent.","Pull it back over your chest."],
+  tip:"Keep your ribs down. You should feel a stretch along your sides."},
+ /* ---- back ---- */
+ {id:"row",name:"Bent-over row",g:"back",mv:"pull",also:["arms"],eq:"db",db:1,
+  poses:[{...HINGE,a:[[43,60],[44,73]]},{...HINGE,a:[[54,44],[48,56]]}],
+  steps:["Hinge at the hips with a flat back, dumbbells hanging under your shoulders.","Pull the dumbbells to your lower ribs, squeezing your shoulder blades together.","Lower under control."],
+  tip:"Keep your neck in line with your spine."},
+ {id:"onearmrow",name:"One-arm row",g:"back",mv:"pull",also:["arms"],eq:"db",db:1,prop:{chair:[26,"l"]},
+  poses:[{n:[44,48],p:[70,56],a:[[46,62],[47,75]],a2:[[42,58],[40,68]],l:[[68,74],[64,90]]},{n:[44,48],p:[70,56],a:[[56,46],[50,58]],a2:[[42,58],[40,68]],l:[[68,74],[64,90]]}],
+  steps:["Rest one hand on a chair, back flat, dumbbell hanging from the other hand.","Pull the dumbbell to your hip, elbow brushing your side.","Lower slowly. Finish the set, then switch arms."],
+  tip:"Count reps per arm. The support takes strain off your lower back, so you can go heavier."},
+ {id:"renegade",name:"Renegade row",g:"back",mv:"pull",also:["core","arms"],eq:"db",db:1,
+  poses:[{n:[40,66],p:[70,72],a:[[39,77],[38,87]],a2:[[39,77],[38,87]],l:[[88,81],[104,90]]},{n:[40,66],p:[70,72],a:[[51,62],[45,73]],a2:[[39,77],[38,87]],l:[[88,81],[104,90]]}],
+  steps:["Start in a high plank gripping two dumbbells, feet wide.","Row one dumbbell to your ribs without twisting your hips.","Lower it and row the other side."],
+  tip:"Use hex dumbbells so they do not roll. Wider feet make it more stable."},
+ {id:"superman",name:"Superman",g:"back",mv:"pull",also:["legs"],eq:"bw",
+  poses:[{n:[40,84],p:[70,85],a:[[28,85],[16,86]],l:[[88,86],[104,86]]},{n:[41,76],p:[70,85],a:[[29,72],[17,68]],l:[[88,80],[104,74]]}],
+  steps:["Lie face down, arms stretched in front.","Lift your arms, chest and legs a few centimetres off the floor.","Hold for a second, lower slowly."],
+  tip:"Think long, not high. Reach fingers and toes away from each other."},
+ {id:"yraise",name:"Prone Y raise",g:"back",mv:"pull",also:["shoulders"],eq:"bw",
+  poses:[{n:[40,84],p:[70,85],a:[[28,85],[16,86]],l:[[88,86],[104,87]]},{n:[41,80],p:[70,85],a:[[29,74],[17,69]],l:[[88,86],[104,87]]}],
+  steps:["Lie face down with your arms out in a Y shape, thumbs up.","Lift your arms and chest slightly, squeezing between your shoulder blades.","Lower slowly."],
+  tip:"Small movement, big effect on posture. Hold light dumbbells once 15 reps is easy."},
+ {id:"shrug",name:"Dumbbell shrug",g:"back",mv:"pull",also:["shoulders"],eq:"db",db:1,mir:1,
+  poses:[{...FR,a:[[54,40],[53,53]]},{...FR,n:[60,24.5],a:[[54,36],[53,49]]}],
+  steps:["Stand tall with a dumbbell in each hand at your sides.","Lift your shoulders straight up towards your ears.","Pause for a second, lower slowly."],
+  tip:"Straight up and down. Do not roll your shoulders."},
+ /* ---- shoulders ---- */
+ {id:"press",name:"Overhead press",g:"shoulders",mv:"push",also:["arms"],eq:"db",db:1,mir:1,
+  poses:[{...FR,a:[[47,38],[47,25]]},{...FR,a:[[50,14],[52,2]]}],
+  steps:["Stand with dumbbells at shoulder height, palms forward.","Press straight up until your arms are locked out.","Lower back to your shoulders."],
+  tip:"Squeeze your glutes and keep your ribs down so your lower back does not arch."},
+ {id:"lateral",name:"Lateral raise",g:"shoulders",mv:"push",also:[],eq:"db",db:1,mir:1,
+  poses:[{...FR,a:[[54,40],[52,53]]},{...FR,a:[[46,27],[33,27]]}],
+  steps:["Stand with dumbbells at your sides, elbows slightly bent.","Raise your arms out to the sides to shoulder height.","Lower slowly."],
+  tip:"Go lighter than you think. Lead with the elbows, not the hands."},
+ {id:"frontraise",name:"Front raise",g:"shoulders",mv:"push",also:[],eq:"db",db:1,
+  poses:[ST,{...ST,a:[[73,29],[86,27]]}],
+  steps:["Stand with dumbbells in front of your thighs.","Lift them straight forward to shoulder height with nearly straight arms.","Lower under control."],
+  tip:"No swinging. If you have to lean back, the weight is too heavy."},
+ {id:"uprightrow",name:"Upright row",g:"shoulders",mv:"pull",also:["back","arms"],eq:"db",db:1,mir:1,
+  poses:[{...FR,a:[[54,40],[56,54]]},{...FR,a:[[43,29],[55,35]]}],
+  steps:["Stand with dumbbells in front of your thighs.","Pull them up along your body, elbows leading, to chest height.","Lower slowly."],
+  tip:"Stop when your elbows reach shoulder height. Higher than that can pinch."},
+ {id:"reversefly",name:"Reverse fly",g:"shoulders",mv:"pull",also:["back"],eq:"db",db:1,mir:1,
+  poses:[{n:[60,44],p:[60,58],a:[[57,56],[58,68]],l:[[55,74],[53,90]]},{n:[60,44],p:[60,58],a:[[46,46],[33,42]],l:[[55,74],[53,90]]}],
+  steps:["Hinge forward with a flat back, dumbbells hanging under your chest.","Open your arms out to the sides like wings.","Lower slowly."],
+  tip:"Works the back of the shoulders, which desk posture neglects. Go light."},
+ {id:"pikepushup",name:"Pike push-up",g:"shoulders",mv:"push",also:["arms"],eq:"bw",
+  poses:[{n:[46,62],p:[66,40],a:[[43,76],[40,90]],l:[[76,64],[86,90]]},{n:[43,79],p:[66,45],a:[[55,78],[40,90]],l:[[76,66],[86,90]]}],
+  steps:["From a push-up position, walk your feet in until your hips are high.","Bend your elbows to lower the top of your head towards the floor.","Press back up."],
+  tip:"An overhead press with no weights. Put your feet on a chair to make it harder."},
+ /* ---- arms ---- */
+ {id:"curl",name:"Biceps curl",g:"arms",mv:"pull",also:[],eq:"db",db:1,
+  poses:[ST,{...ST,a:[[60,40],[69,30]]}],
+  steps:["Stand with dumbbells at your sides, palms forward.","Curl them to your shoulders while your elbows stay pinned to your ribs.","Lower all the way down."],
+  tip:"If your elbows drift forward or you swing, drop the weight."},
+ {id:"hammer",name:"Hammer curl",g:"arms",mv:"pull",also:[],eq:"db",db:1,
+  poses:[ST,{...ST,a:[[60,40],[69,30]]}],
+  steps:["Stand with dumbbells at your sides, palms facing each other.","Curl them up, keeping your palms facing in the whole way.","Lower slowly."],
+  tip:"Builds the forearm and the outer biceps. You can usually go slightly heavier than a regular curl."},
+ {id:"triext",name:"Overhead triceps extension",g:"arms",mv:"push",also:[],eq:"db",db:1,
+  poses:[{...ST,a:[[62,13],[62,1]]},{...ST,a:[[62,13],[51,17]]}],
+  steps:["Hold one dumbbell overhead with both hands.","Bend your elbows to lower it behind your head.","Straighten your arms to press it back up."],
+  tip:"Keep elbows pointing at the ceiling and close to your ears."},
+ {id:"kickback",name:"Triceps kickback",g:"arms",mv:"push",also:[],eq:"db",db:1,
+  poses:[{...HINGE,a:[[57,47],[53,59]]},{...HINGE,a:[[57,47],[70,45]]}],
+  steps:["Hinge forward, upper arms tucked along your ribs, elbows bent.","Straighten your arms behind you.","Return without dropping your elbows."],
+  tip:"Only the forearm moves. Pause for a second at the top."},
+ {id:"skull",name:"Skull crusher",g:"arms",mv:"push",also:[],eq:"db",db:1,
+  poses:[{...LIE,a:[[44,70],[44,57]]},{...LIE,a:[[44,70],[33,77]]}],
+  steps:["Lie on your back with dumbbells held straight up over your chest.","Bend only at the elbows to lower the weights beside your head.","Straighten your arms again."],
+  tip:"Upper arms stay still and vertical. Start light."},
+ {id:"dips",name:"Chair dip",g:"arms",mv:"push",also:["chest","shoulders"],eq:"bw",prop:{chair:[60,"r"]},
+  poses:[{n:[57,42],p:[53,67],a:[[59,55],[61,68]],l:[[36,68],[34,90]]},{n:[57,55],p:[53,80],a:[[68,57],[61,68]],l:[[36,72],[34,90]]}],
+  steps:["Sit on the edge of a sturdy chair, hands gripping the seat beside your hips.","Slide your hips off and bend your elbows to lower yourself.","Press back up until your arms are straight."],
+  tip:"Put the chair against a wall so it cannot slide. Stop when your upper arms are level with the floor."},
+ {id:"diamond",name:"Diamond push-up",g:"arms",mv:"push",also:["chest"],eq:"bw",poses:[PU_A,PU_B],
+  steps:["Place your hands together under your chest so thumbs and index fingers form a diamond.","Lower your chest to your hands, elbows close to your body.","Press back up."],
+  tip:"The hardest push-up for triceps. Do them from your knees to start."},
+ /* ---- core ---- */
+ {id:"crunch",name:"Crunch",g:"core",mv:"core",also:[],eq:"bw",
+  poses:[{n:[32,86],p:[60,86],a:[[25,82],[30,79]],l:[[76,70],[88,90]]},{n:[35,75],p:[60,86],a:[[29,69],[35,68]],l:[[76,70],[88,90]]}],
+  steps:["Lie on your back, knees bent, fingertips by your temples.","Curl your shoulders off the floor by pulling your ribs towards your hips.","Lower slowly."],
+  tip:"Do not pull on your neck. Hold a dumbbell on your chest to make it harder."},
+ {id:"plank",name:"Plank",g:"core",mv:"core",also:["shoulders"],eq:"bw",timed:1,slow:1,
+  poses:[{n:[40,71],p:[70,76],a:[[40,89],[28,89]],l:[[88,83],[104,90]]},{n:[40,71],p:[70,77.5],a:[[40,89],[28,89]],l:[[88,83.5],[104,90]]}],
+  steps:["Forearms on the floor, elbows under shoulders.","Lift your hips so your body forms one straight line.","Hold, breathing steadily. Stop when your hips start to sag."],
+  tip:"Squeeze your glutes and pull your elbows towards your toes."},
+ {id:"sideplank",name:"Side plank",g:"core",mv:"core",also:["shoulders"],eq:"bw",timed:1,slow:1,
+  poses:[{n:[42,68],p:[68,78],a:[[42,88],[53,89]],a2:[[44,54],[46,42]],l:[[88,84],[106,90]]},{n:[42,68],p:[68,79.5],a:[[42,88],[53,89]],a2:[[44,54],[46,42]],l:[[88,84.5],[106,90]]}],
+  steps:["Lie on your side, elbow under your shoulder, feet stacked.","Lift your hips until your body is a straight line.","Hold, then repeat on the other side."],
+  tip:"Log each side as its own set. Bend your bottom knee to make it easier."},
+ {id:"legraise",name:"Leg raise",g:"core",mv:"core",also:[],eq:"bw",
+  poses:[{n:[30,86],p:[60,86],a:[[44,88],[56,88]],l:[[78,85],[96,85]]},{n:[30,86],p:[60,86],a:[[44,88],[56,88]],l:[[62,68],[64,50]]}],
+  steps:["Lie on your back, legs straight, hands under your hips.","Raise your legs until they point at the ceiling.","Lower them slowly, stopping just above the floor."],
+  tip:"Press your lower back into the floor the whole time. Bend your knees if it lifts."},
+ {id:"bicycle",name:"Bicycle crunch",g:"core",mv:"core",also:[],eq:"bw",fast:1,poses:[BIKE,sw(BIKE)],
+  steps:["Lie on your back, hands by your head, shoulders off the floor.","Bring one knee in while you extend the other leg and turn your opposite elbow to the knee.","Switch sides in a pedalling motion."],
+  tip:"Slow and controlled beats fast. Count each side as one rep."},
+ {id:"twist",name:"Russian twist",g:"core",mv:"core",also:[],eq:"both",
+  poses:[{n:[44,60],p:[62,84],a:[[55,66],[65,69]],l:[[80,70],[94,82]]},{n:[44,60],p:[62,84],a:[[50,69],[53,77]],l:[[80,70],[94,82]]}],
+  steps:["Sit with knees bent, lean back until your abs switch on.","Clasp your hands at your chest (or hold a dumbbell) and rotate your torso to one side.","Rotate to the other side. That is one rep."],
+  tip:"Turn your shoulders, not just your arms. Lift your feet to make it harder."},
+ {id:"deadbug",name:"Dead bug",g:"core",mv:"core",also:[],eq:"bw",poses:[BUG,sw(BUG)],
+  steps:["Lie on your back, arms pointing up, knees bent at 90° above your hips.","Lower one arm behind you and extend the opposite leg, without arching your back.","Return and switch sides."],
+  tip:"If your lower back lifts off the floor, shorten the movement."},
+ {id:"flutter",name:"Flutter kicks",g:"core",mv:"core",also:[],eq:"bw",timed:1,fast:1,poses:[FLUT,sw(FLUT)],
+  steps:["Lie on your back, hands under your hips, legs straight.","Lift both feet a little off the floor.","Kick up and down in small quick movements."],
+  tip:"Keep your lower back pressed down. Lift your legs higher if it arches."},
+ {id:"birddog",name:"Bird dog",g:"core",mv:"core",also:["back","legs"],eq:"bw",
+  poses:[{...ALL4,a2:[[42,80],[42,90]],l2:[[70,88],[88,89]]},{...ALL4,a2:[[30,66],[18,64]],l2:[[86,68],[104,66]]}],
+  steps:["Start on hands and knees, back flat.","Reach one arm forward and the opposite leg back until both are level.","Pause, return and switch sides."],
+  tip:"Move slowly and keep your hips level, as if balancing a glass of water on your back."},
+ {id:"climber",name:"Mountain climber",g:"cardio",mv:"cardio",also:["core","shoulders"],eq:"bw",timed:1,fast:1,poses:[MC,sw(MC)],
+  steps:["Start in a high plank, hands under shoulders.","Drive one knee towards your chest.","Switch legs quickly, like running on the spot."],
+  tip:"Keep your hips level with your shoulders."},
+ /* ---- legs ---- */
+ {id:"goblet",name:"Goblet squat",g:"legs",mv:"legs",also:["core"],eq:"db",db:1,
+  poses:[{n:[60,26],p:[60,54],a:[[62,40],[67,31]],l:[[61,72],[62,90]]},{...SQ,a:[[62,58],[68,50]]}],
+  steps:["Hold one dumbbell against your chest, feet shoulder-width apart.","Sit down and back until your thighs are level with the floor.","Drive through your heels to stand."],
+  tip:"Keep your chest tall and knees tracking over your toes."},
+ {id:"lunge",name:"Lunge",g:"legs",mv:"legs",also:[],eq:"both",
+  poses:[{...ST,l2:[[61,72],[60,90]]},{n:[60,38],p:[60,66],a:[[60,52],[61,65]],l:[[77,70],[77,90]],l2:[[56,85],[40,88]]}],
+  steps:["Stand tall, dumbbells at your sides (or hands on hips).","Step forward and lower until both knees are at about 90°.","Push off the front foot to return, then switch legs."],
+  tip:"Count each leg as one rep. Step backwards instead if your knees complain."},
+ {id:"sidelunge",name:"Side lunge",g:"legs",mv:"legs",also:[],eq:"both",
+  poses:[{n:[60,26],p:[60,54],a:[[56,40],[58,50]],a2:[[64,40],[62,50]],l:[[56,72],[55,90]],l2:[[64,72],[65,90]]},{n:[50,40],p:[52,66],a:[[49,52],[54,60]],a2:[[56,52],[55,60]],l:[[40,72],[38,90]],l2:[[66,78],[79,90]]}],
+  steps:["Stand tall with feet together.","Take a big step to one side and sit back into that hip, other leg straight.","Push back to standing and switch sides."],
+  tip:"Works the inner thighs and glutes that forward lunges miss."},
+ {id:"bulgarian",name:"Bulgarian split squat",g:"legs",mv:"legs",also:[],eq:"both",prop:{chair:[80,"r"]},
+  poses:[{n:[58,28],p:[58,56],a:[[58,42],[57,55]],l:[[56,74],[55,90]],l2:[[71,71],[86,68]]},{n:[57,40],p:[58,68],a:[[58,54],[57,67]],l:[[44,71],[50,90]],l2:[[68,84],[86,68]]}],
+  steps:["Stand a long step in front of a chair and rest the top of one foot on the seat behind you.","Lower straight down until your front thigh is level with the floor.","Drive up through the front heel. Finish the set, then switch legs."],
+  tip:"The best single home exercise for legs. Start with bodyweight; it is harder than it looks."},
+ {id:"sumo",name:"Sumo squat",g:"legs",mv:"legs",also:[],eq:"db",db:1,mir:1,
+  poses:[{n:[60,26],p:[60,54],a:[[55,40],[58,54]],l:[[50,72],[42,90]]},{n:[60,40],p:[60,68],a:[[55,54],[58,68]],l:[[43,72],[42,90]]}],
+  steps:["Stand with feet wide, toes turned out, one dumbbell held with both hands.","Lower straight down, pushing your knees out over your toes.","Stand up, squeezing glutes and inner thighs."],
+  tip:"Keep your torso upright, as if sliding down a wall."},
+ {id:"deadlift",name:"Dumbbell deadlift",g:"legs",mv:"legs",also:["back"],eq:"db",db:1,
+  poses:[ST,{n:[44,46],p:[68,57],a:[[45,60],[46,74]],l:[[65,74],[62,90]]}],
+  steps:["Stand tall, dumbbells in front of your thighs, knees soft.","Push your hips back and slide the dumbbells down your legs, back flat.","Drive your hips forward to stand."],
+  tip:"You should feel a stretch in your hamstrings, not a pull in your lower back."},
+ {id:"singlerdl",name:"Single-leg deadlift",g:"legs",mv:"legs",also:["back","core"],eq:"both",
+  poses:[{...ST,l2:[[61,72],[60,90]]},{n:[42,50],p:[66,56],a:[[44,64],[45,77]],l:[[66,74],[64,90]],l2:[[83,55],[101,53]]}],
+  steps:["Stand on one leg with a soft knee.","Hinge forward, letting the free leg rise behind you as your chest drops.","Squeeze your glute to stand back up. Finish the set, then switch legs."],
+  tip:"Touch a wall with one hand for balance at first."},
+ {id:"bridge",name:"Glute bridge",g:"legs",mv:"legs",also:["core"],eq:"both",
+  poses:[{n:[30,86],p:[58,85],a:[[42,88],[54,88]],l:[[74,68],[82,90]]},{n:[30,85],p:[58,70],a:[[42,88],[54,88]],l:[[76,66],[82,90]]}],
+  steps:["Lie on your back, knees bent, feet flat near your hips.","Squeeze your glutes and lift your hips until knees, hips and shoulders line up.","Pause, lower slowly."],
+  tip:"Rest a dumbbell on your hips for more load, or try one leg at a time."},
+ {id:"donkey",name:"Donkey kick",g:"legs",mv:"legs",also:["core"],eq:"bw",
+  poses:[{...ALL4,l2:[[70,88],[88,89]]},{...ALL4,l2:[[85,62],[83,45]]}],
+  steps:["Start on hands and knees.","Keeping the knee bent, lift one leg until your thigh is level with your back.","Lower without touching down. Finish the set, then switch legs."],
+  tip:"Squeeze the glute at the top. Do not arch your lower back to get higher."},
+ {id:"wallsit",name:"Wall sit",g:"legs",mv:"legs",also:[],eq:"bw",timed:1,slow:1,prop:{wall:39},
+  poses:[{n:[44,40],p:[44,68],a:[[46,54],[56,62]],l:[[64,68],[64,90]]},{n:[44,40.8],p:[44,68],a:[[46,54.6],[56,62]],l:[[64,68],[64,90]]}],
+  steps:["Lean your back against a wall and walk your feet forward.","Slide down until your thighs are level with the floor.","Hold. Keep your back flat on the wall."],
+  tip:"Hands stay off your thighs."},
+ /* ---- cardio ---- */
+ {id:"jacks",name:"Jumping jacks",g:"cardio",mv:"cardio",also:["shoulders","legs"],eq:"bw",timed:1,fast:1,mir:1,
+  poses:[{n:[60,26],p:[60,54],a:[[54,40],[51,53]],l:[[58,72],[57,90]]},{n:[60,25],p:[60,53],a:[[47,15],[53,4]],l:[[51,71],[43,90]]}],
+  steps:["Stand with feet together, arms by your sides.","Jump your feet apart while swinging your arms overhead.","Jump back and keep a steady rhythm."],
+  tip:"Land softly. Step side to side instead of jumping for a low-impact version."},
+ {id:"burpee",name:"Burpee",g:"cardio",mv:"cardio",also:["chest","legs","core"],eq:"bw",
+  poses:[{n:[50,26],p:[50,54],a:[[50,40],[52,53]],l:[[51,72],[50,90]]},BSQ,{n:[74,66],p:[44,74],a:[[75,78],[76,90]],l:[[26,82],[10,90]]},BSQ],
+  steps:["From standing, squat down and put your hands on the floor.","Jump or step your feet back into a plank.","Jump your feet back to your hands and stand up."],
+  tip:"Step back and forward instead of jumping if you are new to these."},
+ {id:"highknees",name:"High knees",g:"cardio",mv:"cardio",also:["legs","core"],eq:"bw",timed:1,fast:1,poses:[HK,sw(HK)],
+  steps:["Stand tall and run on the spot.","Drive each knee up to hip height.","Pump your arms in rhythm."],
+  tip:"March instead of running to bring the intensity down."},
+ {id:"buttkicks",name:"Butt kicks",g:"cardio",mv:"cardio",also:["legs"],eq:"bw",timed:1,fast:1,poses:[BK,sw(BK)],
+  steps:["Jog on the spot.","Kick each heel up towards your glutes.","Stay light on the balls of your feet."],
+  tip:"A gentler alternative to high knees and a good warm-up."},
+ {id:"skater",name:"Skater hops",g:"cardio",mv:"cardio",also:["legs"],eq:"bw",timed:1,
+  poses:[{n:[46,34],p:[50,58],a:[[40,46],[44,56]],a2:[[56,44],[62,50]],l:[[46,74],[44,90]],l2:[[60,72],[70,78]]},{n:[74,34],p:[70,58],a:[[80,46],[76,56]],a2:[[64,44],[58,50]],l:[[74,74],[76,90]],l2:[[60,72],[50,78]]}],
+  steps:["Hop sideways onto one foot, letting the other leg swing behind.","Swing your arms across your body for balance.","Hop back to the other side."],
+  tip:"Hop wider for more intensity. Step instead of hopping for low impact."},
+ {id:"boxing",name:"Shadow boxing",g:"cardio",mv:"cardio",also:["shoulders","core"],eq:"bw",timed:1,fast:1,
+  poses:[{...BOX,a:[[70,34],[84,30]],a2:[[62,40],[66,30]]},{...BOX,a:[[64,40],[68,30]],a2:[[70,34],[84,30]]}],
+  steps:["Stand with one foot forward, knees soft, fists up by your chin.","Punch straight out, alternating hands.","Rotate your hips with each punch and stay light on your feet."],
+  tip:"Hold light dumbbells (1 to 2 kg) to make your shoulders work harder."},
+ {id:"squatjump",name:"Squat jump",g:"cardio",mv:"cardio",also:["legs"],eq:"bw",
+  poses:[{...SQ,a:[[52,58],[45,67]]},{n:[60,21],p:[60,49],a:[[63,9],[66,-1]],l:[[61,67],[60,84]]}],
+  steps:["Squat down with your arms swung back.","Jump straight up, reaching for the ceiling.","Land softly and go straight into the next squat."],
+  tip:"Land toe to heel with bent knees. Quality over height."},
+ {id:"swing",name:"Dumbbell swing",g:"cardio",mv:"cardio",also:["legs","back"],eq:"db",db:1,
+  poses:[{n:[74,46],p:[54,56],a:[[68,60],[62,72]],l:[[55,74],[58,90]]},{...ST,a:[[73,30],[86,28]]}],
+  steps:["Hold one dumbbell with both hands and hinge at the hips so it swings between your legs.","Snap your hips forward to swing it to chest height.","Let it fall back between your legs and repeat."],
+  tip:"The power comes from your hips, not your arms. Grip tight."},
+ {id:"thruster",name:"Dumbbell thruster",g:"cardio",mv:"cardio",also:["legs","shoulders"],eq:"db",db:1,
+  poses:[{...SQ,a:[[62,58],[63,46]]},{...ST,a:[[62,13],[63,1]]}],
+  steps:["Hold dumbbells at your shoulders and squat down.","Stand up fast and use the momentum to press the dumbbells overhead.","Bring them back to your shoulders as you drop into the next squat."],
+  tip:"One smooth movement. A great calorie burner with light weights."}
+];
+/* which way each figure faces: flip = facing left or face-down; front = seen from the front */
+["pushup","widepushup","inclinepushup","declinepushup","row","onearmrow","renegade","superman","yraise","pikepushup","kickback","dips","diamond","plank","birddog","climber","deadlift","singlerdl","donkey","bulgarian"].forEach(id=>{EX.find(e=>e.id===id).flip=1});
+["sidelunge","skater"].forEach(id=>{EX.find(e=>e.id===id).front=1});
+
+// Source-owned demo and planning metadata, kept beside the exercise definitions.
+const ADVANCED=new Set(["declinepushup","renegade","pikepushup","diamond","burpee","squatjump","swing","thruster"]);
+const HIGH_IMPACT=new Set(["jacks","burpee","highknees","buttkicks","skater","squatjump"]);
+const UNILATERAL=new Set(["onearmrow","kickback","sideplank","lunge","sidelunge","bulgarian","singlerdl","donkey"]);
+const SINGLE_BELL=new Set(["goblet","sumo","pullover","triext","swing"]);
+const MUSCLES={pushup:["Pectorals"],widepushup:["Pectorals"],inclinepushup:["Pectorals"],declinepushup:["Pectorals"],floorpress:["Pectorals"],pullover:["Pectorals","Lats"],row:["Lats","Upper back"],onearmrow:["Lats"],renegade:["Lats"],shrug:["Trapezius"],curl:["Biceps"],hammer:["Biceps","Brachialis"],triext:["Triceps"],kickback:["Triceps"],skull:["Triceps"],dips:["Triceps"],diamond:["Triceps"],bridge:["Glutes"],donkey:["Glutes"],deadlift:["Hamstrings","Glutes"],singlerdl:["Hamstrings","Glutes"]};
+EX.forEach(e=>{
+  e.level=ADVANCED.has(e.id)?"advanced":"beginner";
+  e.impact=HIGH_IMPACT.has(e.id)?"high":"low";
+  e.unilateral=UNILATERAL.has(e.id);
+  e.singleBell=SINGLE_BELL.has(e.id);
+  e.muscles=MUSCLES[e.id]||[({chest:"Pectorals",back:"Back muscles",shoulders:"Deltoids",arms:"Arm muscles",core:"Abdominals",legs:"Quads and glutes",cardio:"Whole body"})[e.g]];
+});
+
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const pd=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const addD=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return ymd(d)};
+const wdOf=s=>(pd(s).getDay()+6)%7;
+const wk=s=>addD(s,-wdOf(s));
+const nice=s=>pd(s).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
+const short=s=>pd(s).toLocaleDateString(undefined,{day:"numeric",month:"short"});
+let TODAY=ymd(new Date());
+const WD=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const clone=o=>JSON.parse(JSON.stringify(o));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct=x=>Math.round(Math.max(0,Math.min(1,x||0))*100);
+const mmss=s=>Math.floor(s/60)+":"+pad(Math.max(0,s)%60);
+const $=id=>document.getElementById(id);
+
+const defProfile=()=>({set:false,goal:"muscle",focus:[],startKg:null,targetKg:null,days:[0,1,3,4],created:TODAY,weigh:[],measures:[],dbs:[],custom:[],swaps:{},experience:"beginner",minutes:45,chair:true,hasDumbbells:true,lowImpact:false,excluded:[]});
+const S={profile:defProfile(),days:{}};
+let D={profile:false,days:{}};
+let online=false,syncing=false,storageError=false,editGeneration=0;
+let revisions={profile:0,days:{}},conflicts={};
+const LS="exercisestudio.v2",J={"Content-Type":"application/json"};
+function fixProfile(p){
+  const o=Object.assign(defProfile(),p||{});
+  if(p&&!p.days&&p.weekly)o.days=({1:[0],2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,4,5],6:[0,1,2,3,4,5],7:[0,1,2,3,4,5,6]})[p.weekly]||[0,1,3,4];
+  o.days=[...new Set(Array.isArray(o.days)?o.days:[0,2,4])].filter(d=>Number.isInteger(d)&&d>=0&&d<7).sort((a,b)=>a-b);if(!o.days.length)o.days=[0,2,4];
+  for(const key of ["focus","weigh","measures","dbs","custom","excluded"])if(!Array.isArray(o[key]))o[key]=[];
+  o.minutes=[15,20,30,45,60].includes(o.minutes)?o.minutes:45;
+  if(!["beginner","experienced"].includes(o.experience))o.experience="beginner";
+  return o;
+}
+
+var P=null;
+function exAll(){return EX.concat(S.profile.custom.map(c=>({id:c.id,name:c.name,g:c.g,mv:c.g,also:[],eq:c.eq,timed:c.timed?1:0,db:c.eq==="db"?1:0,custom:1,slow:1,poses:[ST,ST],steps:c.notes?[c.notes]:["Your own exercise. Add notes in Setup to remind yourself of the form."],tip:""})))}
+function exById(id){return EX.find(e=>e.id===id)||exAll().find(e=>e.id===id)||null}
+const exName=id=>{const e=exById(id);return e?e.name:"Removed exercise"};
+const eqTxt=e=>(e.eq==="bw"?"Bodyweight":e.eq==="db"?"Dumbbells":"Bodyweight or dumbbells")+(e.prop&&e.prop.chair?" · sturdy chair":"")+(e.prop&&e.prop.wall?" · wall":"");
+const setTxt=s=>(s.s?s.s+" s":(s.r+(s.kg?" × "+s.kg+" kg":"")))+(s.side?" · "+s.side:"");
+
+/* ================= programme ================= */
+const SCHEMES={lose:{sets:3,lo:12,hi:15,rest:30,hold:30,label:"Lose weight"},trim:{sets:3,lo:10,hi:15,rest:45,hold:35,label:"Body composition"},muscle:{sets:4,lo:8,hi:12,rest:75,hold:45,label:"Build muscle"}};
+const scheme=()=>{const base=SCHEMES[S.profile.goal]||SCHEMES.muscle;return {...base,sets:S.profile.experience==="beginner"?2:base.sets}};
+const playerScheme=()=>P&&P.plan?P.plan.scheme:scheme();
+const TYPE={full:{n:"Full body",g:"full",s:"Full"},upper:{n:"Upper body",g:"chest",s:"Upper"},lower:{n:"Lower body",g:"legs",s:"Lower"},push:{n:"Push day",g:"arms",s:"Push"},pull:{n:"Pull day",g:"back",s:"Pull"},legs:{n:"Leg day",g:"legs",s:"Legs"}};
+const SEQ={1:["full"],2:["full","full"],3:["full","full","full"],4:["upper","lower","upper","lower"],5:["push","pull","legs","upper","lower"],6:["push","pull","legs","push","pull","legs"],7:["push","pull","legs","push","pull","legs","full"]};
+const SLOTS={full:["legs","chest","back","shoulders","legs","core"],upper:["chest","back","shoulders","arms:pull","arms:push","core"],lower:["legs","legs","legs","core","core","cardio"],
+  push:["chest","chest","shoulders","shoulders","arms:push","core"],pull:["back","back","back","arms:pull","arms:pull","core"],legs:["legs","legs","legs","legs","core","cardio"]};
+function buildSession(pos,date=TODAY){
+  const p=S.profile,type=SEQ[p.days.length][pos],slots=SLOTS[type].slice();
+  if(p.goal==="lose"){slots.splice(4,1);slots.push("cardio","cardio")}else if(p.goal==="trim")slots.push("cardio");
+  p.focus.forEach(f=>{if(slots.length<8&&slots.some(s=>s.split(":")[0]===f))slots.push(f)});
+  const block=Math.floor(Math.max(0,(pd(wk(date))-pd(wk(p.created)))/6048e5)/4),used=[],list=[],all=exAll().filter(e=>Workout.eligible(e,p));
+  slots.forEach((s,i)=>{
+    const [g,mv]=s.split(":"),pool=all.filter(e=>e.g===g&&(!mv||e.mv===mv)&&!used.includes(e.id));
+    if(!pool.length)return;
+    const key=type+pos+"-"+i,e=pool[(block*3+pos*2+i+(p.swaps[key]||0))%pool.length];
+    used.push(e.id);list.push({id:e.id,key});
+  });
+  const sc=scheme();
+  // Keep focus work inside the time budget rather than appending unreachable work.
+  if(p.focus.length){const at=list.findIndex(x=>p.focus.includes(exById(x.id).g));if(at>0)list.unshift(...list.splice(at,1))}
+  return {type,pos,name:TYPE[type].n,g:TYPE[type].g,list:Workout.fitTime(list.map(x=>({...exById(x.id),slot:x})),p,sc).map(e=>e.slot)};
+}
+function planFor(d){const pos=S.profile.days.indexOf(wdOf(d));return pos<0?null:buildSession(pos,d)}
+function nextPlan(){for(let i=1;i<=7;i++){const d=addD(TODAY,i),s=planFor(d);if(s)return {d,s}}return null}
+
+
+function snapshotPlan(sess){const sc=scheme();return {name:sess.name,ids:sess.list.map(x=>x.id||x),sets:sc.sets,scheme:sc,unilateral:sess.list.map(x=>exById(x.id||x)).filter(e=>e&&e.unilateral).map(e=>e.id)}}
+
+var NativeRules={
+ defaultProfile:()=>JSON.stringify(defProfile()),
+ run:(state,method,args)=>{S.profile=fixProfile(state.profile);S.days=state.days||{};TODAY=args.date||ymd(new Date());
+ let result;
+ switch(method){
+ case 'library':result=exAll();break;
+ case 'plan':{const day=S.days[TODAY];const sess=planFor(TODAY);result=day&&day.plan?day.plan:sess?snapshotPlan(sess):null;break;}
+ case 'train':result=snapshotPlan(buildSession(0,TODAY));break;
+ case 'scheme':result=scheme();break;
+ case 'status':result=Workout.status(args.day);break;
+ case 'count':result=Workout.setCount(args.day,args.id);break;
+ case 'weight':result=Workout.weightTrend(S.profile.weigh);break;
+ case 'trend':result=Workout.trend(S.days,args.id);break;
+ case 'skeleton':result=FigureMath.skeleton(exById(args.id),args.time||0);break;
+ }
+ return JSON.stringify(result);
+ }};

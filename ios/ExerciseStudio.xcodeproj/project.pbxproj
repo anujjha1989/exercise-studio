@@ -7,13 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C38B23F9532F9909C3FFA65 /* NativeMoreViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553E59E17589BD07F063AAA3 /* NativeMoreViews.swift */; };
+		1ECD450E886C46DF9173CD4A /* shared-rules.js in Resources */ = {isa = PBXBuildFile; fileRef = 127796B43F35F4E4EE3C33C6 /* shared-rules.js */; };
 		3358E3DC40654D2EDADFBC38 /* ExerciseStudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E58872A12EE4C928957EC61B /* ExerciseStudioApp.swift */; };
 		382EDFB8F9BCAE841C9E62F2 /* CompanionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9AB1E4B7749BC8FFADF41A /* CompanionUITests.swift */; };
+		440EC6A189651261EF31707E /* NativeDemo.swift in Sources */ = {isa = PBXBuildFile; fileRef = E63841DADBBD17C108452D9C /* NativeDemo.swift */; };
+		5EB68C21477D7AECDA32E338 /* NativeSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE10217DC3FC0A663E30FA3D /* NativeSignIn.swift */; };
 		5F7B58AFAA63A798E4C427D9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0414C5E972AF35A41ED6739C /* Assets.xcassets */; };
 		6CF4774882D864B6582B744C /* ServerAddressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 589C2AB04825BF60BEF4674D /* ServerAddressTests.swift */; };
-		A5BF1FB84492231E6A4BCCF7 /* StudioWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD71EC83DBE45969B9D72C17 /* StudioWebView.swift */; };
+		9110C31B32F9FDAAC507029B /* NativeRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96C16751EF693D279E6F08C4 /* NativeRulesTests.swift */; };
+		92950EB2744F9C5C1DDEBBC7 /* NativeSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8FD7900A13CD514997B456 /* NativeSyncTests.swift */; };
 		AFE20CCC611457FD131BB92B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B0DDC7E1AE48C48189BE9D88 /* PrivacyInfo.xcprivacy */; };
+		DD8C5DAEEB654FB7F265C98A /* NativeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12809FA6CB0DA0AF953AD3B8 /* NativeViews.swift */; };
 		E9721EEDCBFA638BB52327BA /* ServerAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C60DDDA29CA30CB7CFC36C /* ServerAddress.swift */; };
+		EC48D7B1520FFBC057481FF2 /* NativeWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 573A178C6263F834FDC60EA2 /* NativeWorkout.swift */; };
+		FEA424CA8C2A670261AE7F05 /* NativeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0760127E9C9D378966F598 /* NativeStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,14 +43,22 @@
 
 /* Begin PBXFileReference section */
 		0414C5E972AF35A41ED6739C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		127796B43F35F4E4EE3C33C6 /* shared-rules.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "shared-rules.js"; sourceTree = "<group>"; };
+		12809FA6CB0DA0AF953AD3B8 /* NativeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeViews.swift; sourceTree = "<group>"; };
 		25C60DDDA29CA30CB7CFC36C /* ServerAddress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerAddress.swift; sourceTree = "<group>"; };
 		2622F7F6B46EF58CA36958F7 /* ExerciseStudioTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ExerciseStudioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		553E59E17589BD07F063AAA3 /* NativeMoreViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMoreViews.swift; sourceTree = "<group>"; };
+		573A178C6263F834FDC60EA2 /* NativeWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeWorkout.swift; sourceTree = "<group>"; };
 		589C2AB04825BF60BEF4674D /* ServerAddressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerAddressTests.swift; sourceTree = "<group>"; };
 		812FB690498CF5E0D783D4D3 /* ExerciseStudioUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ExerciseStudioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		96C16751EF693D279E6F08C4 /* NativeRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRulesTests.swift; sourceTree = "<group>"; };
+		9C8FD7900A13CD514997B456 /* NativeSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSyncTests.swift; sourceTree = "<group>"; };
 		AA9AB1E4B7749BC8FFADF41A /* CompanionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionUITests.swift; sourceTree = "<group>"; };
-		AD71EC83DBE45969B9D72C17 /* StudioWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioWebView.swift; sourceTree = "<group>"; };
 		B0DDC7E1AE48C48189BE9D88 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		BB0760127E9C9D378966F598 /* NativeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStore.swift; sourceTree = "<group>"; };
+		BE10217DC3FC0A663E30FA3D /* NativeSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSignIn.swift; sourceTree = "<group>"; };
 		E58872A12EE4C928957EC61B /* ExerciseStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseStudioApp.swift; sourceTree = "<group>"; };
+		E63841DADBBD17C108452D9C /* NativeDemo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDemo.swift; sourceTree = "<group>"; };
 		F8501A825C6398CF155C37FB /* ExerciseStudio.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ExerciseStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -52,9 +68,15 @@
 			children = (
 				0414C5E972AF35A41ED6739C /* Assets.xcassets */,
 				E58872A12EE4C928957EC61B /* ExerciseStudioApp.swift */,
+				E63841DADBBD17C108452D9C /* NativeDemo.swift */,
+				553E59E17589BD07F063AAA3 /* NativeMoreViews.swift */,
+				BE10217DC3FC0A663E30FA3D /* NativeSignIn.swift */,
+				BB0760127E9C9D378966F598 /* NativeStore.swift */,
+				12809FA6CB0DA0AF953AD3B8 /* NativeViews.swift */,
+				573A178C6263F834FDC60EA2 /* NativeWorkout.swift */,
 				B0DDC7E1AE48C48189BE9D88 /* PrivacyInfo.xcprivacy */,
 				25C60DDDA29CA30CB7CFC36C /* ServerAddress.swift */,
-				AD71EC83DBE45969B9D72C17 /* StudioWebView.swift */,
+				9F7AC0BD85008B12DFFBC1E9 /* Resources */,
 			);
 			path = ExerciseStudio;
 			sourceTree = "<group>";
@@ -72,6 +94,8 @@
 		767E171E33947D1FFFA799E5 /* ExerciseStudioTests */ = {
 			isa = PBXGroup;
 			children = (
+				96C16751EF693D279E6F08C4 /* NativeRulesTests.swift */,
+				9C8FD7900A13CD514997B456 /* NativeSyncTests.swift */,
 				589C2AB04825BF60BEF4674D /* ServerAddressTests.swift */,
 			);
 			path = ExerciseStudioTests;
@@ -83,6 +107,14 @@
 				AA9AB1E4B7749BC8FFADF41A /* CompanionUITests.swift */,
 			);
 			path = ExerciseStudioUITests;
+			sourceTree = "<group>";
+		};
+		9F7AC0BD85008B12DFFBC1E9 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				127796B43F35F4E4EE3C33C6 /* shared-rules.js */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		EA734934F5BE38C991F3749B = {
@@ -204,6 +236,7 @@
 			files = (
 				5F7B58AFAA63A798E4C427D9 /* Assets.xcassets in Resources */,
 				AFE20CCC611457FD131BB92B /* PrivacyInfo.xcprivacy in Resources */,
+				1ECD450E886C46DF9173CD4A /* shared-rules.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,8 +248,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				3358E3DC40654D2EDADFBC38 /* ExerciseStudioApp.swift in Sources */,
+				440EC6A189651261EF31707E /* NativeDemo.swift in Sources */,
+				0C38B23F9532F9909C3FFA65 /* NativeMoreViews.swift in Sources */,
+				5EB68C21477D7AECDA32E338 /* NativeSignIn.swift in Sources */,
+				FEA424CA8C2A670261AE7F05 /* NativeStore.swift in Sources */,
+				DD8C5DAEEB654FB7F265C98A /* NativeViews.swift in Sources */,
+				EC48D7B1520FFBC057481FF2 /* NativeWorkout.swift in Sources */,
 				E9721EEDCBFA638BB52327BA /* ServerAddress.swift in Sources */,
-				A5BF1FB84492231E6A4BCCF7 /* StudioWebView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,6 +262,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9110C31B32F9FDAAC507029B /* NativeRulesTests.swift in Sources */,
+				92950EB2744F9C5C1DDEBBC7 /* NativeSyncTests.swift in Sources */,
 				6CF4774882D864B6582B744C /* ServerAddressTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
