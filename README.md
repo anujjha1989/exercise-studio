@@ -86,3 +86,7 @@ Setup offers a JSON log backup for in-app restore and a `.tar.gz` archive contai
 The offline cache name is derived from the app files by `release-stamp.js` when the server starts, so any release that changes a file refreshes the copy on your phone automatically (after the app is fully closed and reopened).
 
 The browser boots through `public/boot.mjs`. The editable renderer and pose mapping are `public/figure.js` and `public/figure-math.js`. Three.js is pinned in `package-lock.json`; reproduce the committed browser modules with `npm ci --ignore-scripts && npm run stage-assets`. CI checks these generated assets against the committed files. Fonts are bundled locally with their OFL licenses, so the offline shell has no external font dependency.
+
+## iPhone companion
+
+`ios/ExerciseStudio.xcodeproj` contains the personal-use native iPhone app, with SwiftUI workout screens and SceneKit demos sharing the Pi data API and canonical exercise rules. See `ios/README.md` for signing, installation and device verification. The native project is generated from `ios/project.yml`; it does not introduce a second workout interface or require a Pi deployment.
