@@ -1,9 +1,9 @@
 name: iOS build
 on:
   push:
-    paths: ['ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
+    paths: ['tvos/**', 'ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
   pull_request:
-    paths: ['ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
+    paths: ['tvos/**', 'ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
 jobs:
   build:
     runs-on: macos-latest
@@ -15,3 +15,7 @@ jobs:
       - run: node scripts/stage-ios.js
       - run: git diff --exit-code -- ios/ExerciseStudio/Resources/shared-rules.js
       - run: xcodebuild -project ios/ExerciseStudio.xcodeproj -scheme ExerciseStudio -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
+      - run: |
+          mkdir -p /tmp/exercise-tv-assets
+          xcrun actool tvos/Assets.xcassets --compile /tmp/exercise-tv-assets --platform appletvos --minimum-deployment-target 17.0 --target-device tv --app-icon 'Brand Assets' --output-partial-info-plist /tmp/exercise-tv-info.plist > /tmp/exercise-tv-result.plist
+          python3 -c 'import plistlib; result=plistlib.load(open("/tmp/exercise-tv-result.plist", "rb")); assert not result.get("com.apple.actool.document.errors"), result'
