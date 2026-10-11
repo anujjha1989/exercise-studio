@@ -90,3 +90,7 @@ The browser boots through `public/boot.mjs`. The editable renderer and pose mapp
 ## iPhone companion
 
 `ios/ExerciseStudio.xcodeproj` contains the personal-use native iPhone app, with SwiftUI workout screens and SceneKit demos sharing the Pi data API and canonical exercise rules. See `ios/README.md` for signing, installation and device verification. The native project is generated from `ios/project.yml`; it does not introduce a second workout interface or require a Pi deployment.
+
+## App icon
+
+The supplied artwork in `assets/app-icon.png` is the canonical master. Run `python3 -m pip install Pillow==11.3.0` then `python3 scripts/stage-icons.py` to reproduce browser favicons, Apple touch, PWA (including a separate maskable icon), and the 1024px iOS app icon. Xcode generates the device-specific iPhone and iPad sizes. Commit all generated icons with the master; the Pi serves those committed assets directly.

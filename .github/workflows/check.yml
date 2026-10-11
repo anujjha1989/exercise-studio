@@ -11,6 +11,12 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run stage-assets
       - run: git diff --exit-code -- public/vendor
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install Pillow==11.3.0
+      - run: python scripts/stage-icons.py
+      - run: git diff --exit-code -- public ios/ExerciseStudio/Assets.xcassets
       - run: npm run check
       - run: npm test
       - run: bash -n update.sh
