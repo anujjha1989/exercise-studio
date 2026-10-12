@@ -64,7 +64,7 @@ struct NativeShell<Content: View>: View {
                         HStack(spacing: 8) { Image(systemName: store.syncing ? "arrow.triangle.2.circlepath" : "icloud.and.arrow.up"); Text(store.syncing ? "Syncing edits…" : "Waiting to sync · \(store.pendingCount) records"); Spacer() }.font(.caption).padding(12).background(.regularMaterial)
                     }
                     if let message = store.message {
-                        HStack { Text(message).font(.caption); Spacer(); Button("Retry") { Task { await store.connect() } } }.padding(12).background(.regularMaterial)
+                        HStack { Text(message).font(.caption); Spacer(); Button("Retry") { Task { await store.connect(manual:true) } } }.padding(12).background(.regularMaterial)
                     }
                     if !store.conflicts.isEmpty {
                         ForEach(store.conflicts.keys.sorted(), id: \.self) { key in NativeConflict(store: store, key: key) }
@@ -131,7 +131,7 @@ struct NativeToday: View {
                     }
                     Text("Warm up for 3 minutes with marching, arm circles and slow squats.").font(.footnote).foregroundStyle(.secondary)
                 }.padding()
-            }.refreshable { await store.connect() }
+            }.refreshable { await store.connect(manual:true) }
         }
         .sheet(isPresented: $adjust) { NativeSessionOptions(store: store) }
         .sheet(item: $selected) { NativeExerciseDetail(store: store, exercise: $0, date: store.today) }
@@ -252,7 +252,7 @@ struct NativeHistory: View {
                         }
                     } header: { Text(date + " · " + store.status(date).capitalized) }
                 }
-            }.scrollContentBackground(.hidden).refreshable { await store.connect() }
+            }.scrollContentBackground(.hidden).refreshable { await store.connect(manual:true) }
         }.sheet(item: $selected) { NativeExerciseDetail(store: store, exercise: $0, date: selectedDate) }
     }
 }

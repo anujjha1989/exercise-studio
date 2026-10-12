@@ -29,7 +29,7 @@ struct TVWorkoutView: View {
                                 if stale { Text("Connection paused · check your iPhone").foregroundStyle(.orange) }
                                 else if link.snapshot["paused"] as? Bool == true { Text("Workout paused").foregroundStyle(.orange) }
                                 else if let rest=link.snapshot["rest"] as? Int,rest>0 { Text("Rest · \(rest) sec").font(.title.monospacedDigit()) }
-                                ForEach(Array(ex.steps.enumerated()),id:\.offset) { i,step in Text("\(i+1). \(step)").font(.body) }
+                                ScrollView { VStack(alignment:.leading,spacing:16) { ForEach(Array(ex.steps.enumerated()),id:\.offset) { i,step in Text("\(i+1). \(step)").font(.body) } } }.frame(maxHeight:350).focusable()
                                 Text("Log sets and control the session on your iPhone.").font(.caption).foregroundStyle(.secondary)
                             }.frame(maxWidth:600)
                         }

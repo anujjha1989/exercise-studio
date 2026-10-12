@@ -17,3 +17,12 @@ test('unilateral progression requires both sides, substitutions preserve purpose
 test('progress summary counts activity separately from completed workouts',()=>{
  const d=day([{r:8,kg:5}]);assert.deepEqual(W.summary({'2026-10-01':d},'2026-10-01').weekDays,1);assert.equal(W.summary({'2026-10-01':d},'2026-10-01').completed,0);
 });
+test('progress records never compare reps directly with kilograms',()=>{
+ const days={'2026-10-01':day([{r:20}]),'2026-10-02':day([{r:8,kg:5}])};
+ assert.deepEqual(W.trend(days,'curl').map(p=>[p.v,p.unit]),[[5,'kg']]);
+ assert.equal(W.summary(days,'2026-10-03').records[0].v,5);
+});
+test('progress summary excludes future records',()=>{
+ const days={'2026-10-01':day([{r:8,kg:5}]),'2026-11-01':day([{r:8,kg:50}])};
+ assert.equal(W.summary(days,'2026-10-02').records[0].v,5);
+});

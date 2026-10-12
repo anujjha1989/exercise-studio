@@ -160,13 +160,8 @@ function journey(){
   return {wPct,weeksIn,hit:Math.min(12,Object.values(by).filter(c=>c>=p.days.length).length),cur};
 }
 function records(skip){
-  const r={};
-  Object.keys(S.days).sort().forEach(k=>{if(k===skip||k>TODAY)return;S.days[k].entries.forEach(e=>e.sets.forEach(s=>{
-    let v,t;
-    if(s.s){v=s.s;t=s.s+" s"}else if(s.kg){v=s.kg*(1+s.r/30);t=s.kg+" kg × "+s.r}else{v=s.r;t=s.r+" reps"}
-    if(!r[e.ex]||v>r[e.ex].v)r[e.ex]={v,t,d:k};
-  }))});
-  return r;
+  const days=Object.fromEntries(Object.entries(S.days).filter(([d])=>d!==skip&&d<=TODAY));
+  return Object.fromEntries(Workout.summary(days,TODAY).records.map(record=>[record.id,{v:record.v,t:record.unit==="kg"?record.v+" kg × "+record.r:record.v+" "+record.unit,d:record.d}]));
 }
 function lastSets(id,before){
   const ks=Object.keys(S.days).filter(k=>k<before).sort().reverse();

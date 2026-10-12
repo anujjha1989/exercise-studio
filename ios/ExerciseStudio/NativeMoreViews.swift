@@ -144,7 +144,7 @@ struct NativeSetup: View {
                     Toggle("Keep screen awake", isOn: $keepAwake)
                     TextField("HTTPS app address", text: $address).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                     Button("Save connection") { guard let url = ServerAddress.parse(address) else { store.message = "Enter an HTTPS address without embedded credentials."; return }; if url != store.address { Task { await store.switchServer(url) } } }
-                    Button("Reconnect") { Task { await store.connect() } }
+                    Button("Reconnect") { Task { await store.connect(manual:true) } }
                 }
                 Section("Backup and restore") {
                     Button("Export sets as CSV") { store.exportCSV() }

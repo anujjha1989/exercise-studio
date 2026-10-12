@@ -39,6 +39,8 @@ final class NativeStore: ObservableObject {
     @Published private(set) var dirty: Set<String> = []
     @Published private(set) var syncing = false
     private var connecting = false
+    private var authDeferred = false
+    func useOffline() { authDeferred = true; needsSignIn = false }
     private var monitor: NWPathMonitor?
     private var retryTask: Task<Void, Never>?
     var pendingCount: Int { dirty.count }
@@ -143,11 +145,12 @@ final class NativeStore: ObservableObject {
         r.setValue(contentType, forHTTPHeaderField: "Content-Type"); if let revision { r.setValue(String(revision), forHTTPHeaderField: "If-Match") }
         let (data, response) = try await network.data(for: r)
         guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
-        if http.statusCode == 401 || (route.hasPrefix("api/") && http.value(forHTTPHeaderField: "Content-Type")?.contains("text/html") == true) { needsSignIn = true; throw URLError(.userAuthenticationRequired) }
+        if http.statusCode == 401 || (route.hasPrefix("api/") && http.value(forHTTPHeaderField: "Content-Type")?.contains("text/html") == true) { if !authDeferred { needsSignIn = true }; throw URLError(.userAuthenticationRequired) }
         return (data, http)
     }
-    func connect() async {
-        guard !connecting else { return }; connecting = true
+    func connect(manual: Bool = false) async {
+        if manual { authDeferred = false }
+        guard !authDeferred, !connecting else { return }; connecting = true
         busy = true; defer { busy = false; connecting = false }
         await copySignInCookies()
         let generation = generations
@@ -163,7 +166,7 @@ final class NativeStore: ObservableObject {
         } catch { if !needsSignIn { message = "Offline. Your saved library and local records remain available; edits will wait for reconnection." } }
     }
     func flush() async {
-        guard !flushing, !needsSignIn else { return }; flushing = true; syncing = true; defer { flushing = false; syncing = false }
+        guard !flushing, !needsSignIn, !authDeferred else { return }; flushing = true; syncing = true; defer { flushing = false; syncing = false }
         while let key = dirty.sorted().first(where: { conflicts[$0] == nil }) {
             let gen = generations[key, default: 0], body: Any = key == "profile" ? profile : day(key)
             let revision = key == "profile" ? (revisions["profile"] as? Int ?? 0) : ((revisions["days"] as? [String: Int] ?? [:])[key] ?? 0)
@@ -204,7 +207,7 @@ final class NativeStore: ObservableObject {
         UserDefaults.standard.set(url.absoluteString, forKey: "serverAddress")
         profile = json(engine.objectForKeyedSubscript("NativeRules")?.forProperty("defaultProfile")?.call(withArguments: [])?.toString()) as? [String: Any] ?? [:]
         days = [:]; revisions = ["profile": 0, "days": [String: Int]()]; conflicts = [:]; generations = [:]
-        loadCache(); await connect()
+        loadCache(); await connect(manual:true)
     }
 
     func exportCSV() {
