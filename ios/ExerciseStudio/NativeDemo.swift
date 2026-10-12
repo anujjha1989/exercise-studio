@@ -175,13 +175,13 @@ struct NativeDemo: View {
             NativeSceneView(figure: figure, active: playing && phase == .active && !externallyPaused).accessibilityLabel("3D demonstration of " + exercise.name)
             Text("Red: primary muscles · Peach: assisting muscles").font(.caption).foregroundStyle(.secondary)
             HStack { Button("Starting position") { playing = false; time = 0; draw() }; Button("Movement path") { showPath.toggle(); draw() }.opacity(showPath ? 1 : 0.6) }.font(.caption).buttonStyle(.borderless)
-            HStack {
+            ScrollView(.horizontal,showsIndicators:false) { HStack {
                 Button { playing.toggle() } label: { Image(systemName: playing ? "pause.fill" : "play.fill") }.accessibilityLabel(playing ? "Pause demo" : "Play demo")
                 Button { time = 0; draw() } label: { Image(systemName:"arrow.counterclockwise") }.accessibilityLabel("Replay")
                 Button(["Isometric", "Front", "Side"][view]) { view = (view+1)%3; draw() }
                 Button("Muscles") { highlights.toggle(); draw() }.opacity(highlights ? 1 : 0.6)
                 Button("Slow") { slow.toggle() }.opacity(slow ? 1 : 0.6)
-            }.font(.caption.bold()).buttonStyle(.bordered).padding(.horizontal,8).padding(.bottom,8)
+            }.font(.caption.bold()).buttonStyle(.bordered).padding(.horizontal,8).padding(.bottom,8) }
         }.background(.white).foregroundStyle(Color(red:0.05,green:0.1,blue:0.24))
         .onAppear { draw(); playing = !reduceMotion }
         .task(id: playing && phase == .active && !externallyPaused) {

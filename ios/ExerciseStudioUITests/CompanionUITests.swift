@@ -30,7 +30,7 @@ extension CompanionUITests {
         XCTAssertTrue(app.switches["Bodyweight only"].exists)
         app.buttons["Cancel"].tap()
         app.tabBars.buttons["Progress"].tap()
-        XCTAssertTrue(app.staticTexts["Your consistency"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS[c] %@","Your consistency")).firstMatch.waitForExistence(timeout:5))
         XCTAssertEqual(app.webViews.count,0)
     }
 }

@@ -74,7 +74,7 @@ struct NativeProgress: View {
                 }
             }
         }.sheet(isPresented: $compare) { NativePhotoCompare(store:store,photos:photos) }
-        .task { await loadPhotos() }
+        .task { if !studioTesting { await loadPhotos() } }
         .onChange(of: photo) { _, item in Task {
             guard let data = try? await item?.loadTransferable(type: Data.self), let image = progressThumbnail(data), let jpeg = image.jpegData(compressionQuality: 0.8), jpeg.count <= 6 * 1024 * 1024 else { store.message = "Choose a photo smaller than 6 MB."; return }
             do { let (_, response) = try await store.request("api/photos?date=" + dayString(date), method: "POST", body: jpeg, contentType: "image/jpeg"); guard response.statusCode == 200 else { throw URLError(.badServerResponse) }; await loadPhotos() } catch { store.message = "Photo upload failed. Try again when connected." }

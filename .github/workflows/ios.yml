@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,3 +25,9 @@ jobs:
         run: |
           destination=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for devices in d["devices"].values() for x in devices if x["name"].startswith("iPhone")))')
           xcodebuild -project ios/ExerciseStudio.xcodeproj -scheme ExerciseStudio -destination "platform=iOS Simulator,id=$destination" -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test
+      - name: Preserve native test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-test-results
+          path: ~/Library/Developer/Xcode/DerivedData/ExerciseStudio-*/Logs/Test/*.xcresult
