@@ -174,21 +174,12 @@ function lastSets(id,before){
   return null;
 }
 function suggest(e,date){
-  const sc=P?playerScheme():scheme(),L=lastSets(e.id,date),lastTxt=L?"Last time ("+short(L.d)+"): "+L.sets.map(setTxt).join(" · "):"";
-  if(e.timed){const best=L?Math.max(...L.sets.map(s=>s.s||0)):0,t=best?Math.min(120,best+5):sc.hold;
-    return {s:t,lastTxt,note:best?"Beat your "+best+" s: aim for "+t+" s.":"Start with "+t+" s."}}
-  if(!L)return {r:sc.lo,kg:null,lastTxt,note:e.eq==="bw"?"Aim for "+sc.lo+" to "+sc.hi+" reps.":"Pick a weight you can lift "+sc.lo+" times with good form."};
-  const kg=Math.max(...L.sets.map(s=>s.kg||0)),top=L.sets.filter(s=>(s.kg||0)===kg),minR=Math.min(...top.map(s=>s.r||0));
-  if(kg>0){
-    if(top.length>=sc.sets*(e.unilateral?2:1)&&minR>=sc.hi){
-      const dbs=S.profile.dbs,up=dbs.filter(x=>x>kg).sort((a,b)=>a-b)[0]||(dbs.length?null:kg+1);
-      if(up)return {r:sc.lo,kg:up,lastTxt,note:"You hit "+sc.hi+" reps on every set. Go up to "+up+" kg."};
-      return {r:minR+1,kg,lastTxt,note:kg+" kg is your heaviest dumbbell. Take 3 seconds to lower each rep, or add a set."};
-    }
-    const r=Math.min(sc.hi,Math.max(sc.lo,minR+1));
-    return {r,kg,lastTxt,note:"Stay at "+kg+" kg and aim for "+r+" reps each set."};
-  }
-  return {r:minR+1,kg:null,lastTxt,note:minR>=20?"Aim for "+(minR+1)+". Past 20 reps, move to a harder variation or add a dumbbell.":"Aim for "+(minR+1)+" reps each set."};
+  const sc=P?playerScheme():S.days[date]?.plan?.scheme||scheme();
+  const target=Workout.recommendation(S.days,e.id,date,sc,S.profile.dbs,!!e.unilateral);
+  const lastTxt=target?"Last time ("+short(target.date)+"): "+setTxt(target.last):"";
+  if(e.timed)return {s:target?.seconds||sc.hold,lastTxt,note:"Use a controlled hold; stop when you cannot keep the starting position."};
+  if(!target)return {r:sc.lo,kg:null,lastTxt,note:"Aim for "+sc.lo+" to "+sc.hi+" comfortable reps with good form."};
+  return {r:target.reps,kg:target.kg||null,lastTxt,note:target.ready?"Two sessions at the top of your range. Try "+target.kg+" kg if your form stays comfortable.":"Keep your last weight and work within "+sc.lo+"–"+sc.hi+" reps."};
 }
 
 /* ================= rest timer + feedback ================= */

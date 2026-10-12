@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0C38B23F9532F9909C3FFA65 /* NativeMoreViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553E59E17589BD07F063AAA3 /* NativeMoreViews.swift */; };
+		19783D8CC26328F00B5ED147 /* TVLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F71E5CC52C662BB8919D86EB /* TVLinkTests.swift */; };
 		1ECD450E886C46DF9173CD4A /* shared-rules.js in Resources */ = {isa = PBXBuildFile; fileRef = 127796B43F35F4E4EE3C33C6 /* shared-rules.js */; };
 		3358E3DC40654D2EDADFBC38 /* ExerciseStudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E58872A12EE4C928957EC61B /* ExerciseStudioApp.swift */; };
 		382EDFB8F9BCAE841C9E62F2 /* CompanionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9AB1E4B7749BC8FFADF41A /* CompanionUITests.swift */; };
@@ -17,7 +18,10 @@
 		6CF4774882D864B6582B744C /* ServerAddressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 589C2AB04825BF60BEF4674D /* ServerAddressTests.swift */; };
 		9110C31B32F9FDAAC507029B /* NativeRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96C16751EF693D279E6F08C4 /* NativeRulesTests.swift */; };
 		92950EB2744F9C5C1DDEBBC7 /* NativeSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8FD7900A13CD514997B456 /* NativeSyncTests.swift */; };
+		A9C4856B04689C75F279150D /* NativeSessionOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DD1F6B7C7761206BAF1208 /* NativeSessionOptions.swift */; };
 		AFE20CCC611457FD131BB92B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B0DDC7E1AE48C48189BE9D88 /* PrivacyInfo.xcprivacy */; };
+		CC8288A50CCD96BDFD6A6CC1 /* TVLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = A720C0C4E4EC5573E21EE034 /* TVLink.swift */; };
+		D8748E597D529EC1E6E7D555 /* EnhancementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D38EF0AAE06CF0216B4B3D8 /* EnhancementTests.swift */; };
 		DD8C5DAEEB654FB7F265C98A /* NativeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12809FA6CB0DA0AF953AD3B8 /* NativeViews.swift */; };
 		E9721EEDCBFA638BB52327BA /* ServerAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C60DDDA29CA30CB7CFC36C /* ServerAddress.swift */; };
 		EC48D7B1520FFBC057481FF2 /* NativeWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 573A178C6263F834FDC60EA2 /* NativeWorkout.swift */; };
@@ -50,15 +54,20 @@
 		553E59E17589BD07F063AAA3 /* NativeMoreViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMoreViews.swift; sourceTree = "<group>"; };
 		573A178C6263F834FDC60EA2 /* NativeWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeWorkout.swift; sourceTree = "<group>"; };
 		589C2AB04825BF60BEF4674D /* ServerAddressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerAddressTests.swift; sourceTree = "<group>"; };
+		6D38EF0AAE06CF0216B4B3D8 /* EnhancementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancementTests.swift; sourceTree = "<group>"; };
 		812FB690498CF5E0D783D4D3 /* ExerciseStudioUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ExerciseStudioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96C16751EF693D279E6F08C4 /* NativeRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRulesTests.swift; sourceTree = "<group>"; };
 		9C8FD7900A13CD514997B456 /* NativeSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSyncTests.swift; sourceTree = "<group>"; };
+		A720C0C4E4EC5573E21EE034 /* TVLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVLink.swift; sourceTree = "<group>"; };
 		AA9AB1E4B7749BC8FFADF41A /* CompanionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionUITests.swift; sourceTree = "<group>"; };
 		B0DDC7E1AE48C48189BE9D88 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		B3DC48B6D05BEDA42FD30A8F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BB0760127E9C9D378966F598 /* NativeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStore.swift; sourceTree = "<group>"; };
 		BE10217DC3FC0A663E30FA3D /* NativeSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSignIn.swift; sourceTree = "<group>"; };
 		E58872A12EE4C928957EC61B /* ExerciseStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseStudioApp.swift; sourceTree = "<group>"; };
 		E63841DADBBD17C108452D9C /* NativeDemo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDemo.swift; sourceTree = "<group>"; };
+		F0DD1F6B7C7761206BAF1208 /* NativeSessionOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSessionOptions.swift; sourceTree = "<group>"; };
+		F71E5CC52C662BB8919D86EB /* TVLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVLinkTests.swift; sourceTree = "<group>"; };
 		F8501A825C6398CF155C37FB /* ExerciseStudio.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ExerciseStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -68,14 +77,17 @@
 			children = (
 				0414C5E972AF35A41ED6739C /* Assets.xcassets */,
 				E58872A12EE4C928957EC61B /* ExerciseStudioApp.swift */,
+				B3DC48B6D05BEDA42FD30A8F /* Info.plist */,
 				E63841DADBBD17C108452D9C /* NativeDemo.swift */,
 				553E59E17589BD07F063AAA3 /* NativeMoreViews.swift */,
+				F0DD1F6B7C7761206BAF1208 /* NativeSessionOptions.swift */,
 				BE10217DC3FC0A663E30FA3D /* NativeSignIn.swift */,
 				BB0760127E9C9D378966F598 /* NativeStore.swift */,
 				12809FA6CB0DA0AF953AD3B8 /* NativeViews.swift */,
 				573A178C6263F834FDC60EA2 /* NativeWorkout.swift */,
 				B0DDC7E1AE48C48189BE9D88 /* PrivacyInfo.xcprivacy */,
 				25C60DDDA29CA30CB7CFC36C /* ServerAddress.swift */,
+				A720C0C4E4EC5573E21EE034 /* TVLink.swift */,
 				9F7AC0BD85008B12DFFBC1E9 /* Resources */,
 			);
 			path = ExerciseStudio;
@@ -94,9 +106,11 @@
 		767E171E33947D1FFFA799E5 /* ExerciseStudioTests */ = {
 			isa = PBXGroup;
 			children = (
+				6D38EF0AAE06CF0216B4B3D8 /* EnhancementTests.swift */,
 				96C16751EF693D279E6F08C4 /* NativeRulesTests.swift */,
 				9C8FD7900A13CD514997B456 /* NativeSyncTests.swift */,
 				589C2AB04825BF60BEF4674D /* ServerAddressTests.swift */,
+				F71E5CC52C662BB8919D86EB /* TVLinkTests.swift */,
 			);
 			path = ExerciseStudioTests;
 			sourceTree = "<group>";
@@ -250,11 +264,13 @@
 				3358E3DC40654D2EDADFBC38 /* ExerciseStudioApp.swift in Sources */,
 				440EC6A189651261EF31707E /* NativeDemo.swift in Sources */,
 				0C38B23F9532F9909C3FFA65 /* NativeMoreViews.swift in Sources */,
+				A9C4856B04689C75F279150D /* NativeSessionOptions.swift in Sources */,
 				5EB68C21477D7AECDA32E338 /* NativeSignIn.swift in Sources */,
 				FEA424CA8C2A670261AE7F05 /* NativeStore.swift in Sources */,
 				DD8C5DAEEB654FB7F265C98A /* NativeViews.swift in Sources */,
 				EC48D7B1520FFBC057481FF2 /* NativeWorkout.swift in Sources */,
 				E9721EEDCBFA638BB52327BA /* ServerAddress.swift in Sources */,
+				CC8288A50CCD96BDFD6A6CC1 /* TVLink.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -262,9 +278,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D8748E597D529EC1E6E7D555 /* EnhancementTests.swift in Sources */,
 				9110C31B32F9FDAAC507029B /* NativeRulesTests.swift in Sources */,
 				92950EB2744F9C5C1DDEBBC7 /* NativeSyncTests.swift in Sources */,
 				6CF4774882D864B6582B744C /* ServerAddressTests.swift in Sources */,
+				19783D8CC26328F00B5ED147 /* TVLinkTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -397,10 +415,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ExerciseStudio/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Exercise Studio";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take progress photos for your workout log.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Display your workout on an Apple TV on your local network.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Select progress photos for your workout log.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -408,7 +428,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.anujjha.exercise-studio";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -479,10 +499,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ExerciseStudio/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Exercise Studio";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take progress photos for your workout log.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Display your workout on an Apple TV on your local network.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Select progress photos for your workout log.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -490,7 +512,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.anujjha.exercise-studio";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";

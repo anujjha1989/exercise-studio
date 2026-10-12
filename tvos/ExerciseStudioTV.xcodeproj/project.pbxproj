@@ -1,0 +1,355 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		018F917EA8CF0E66CFD21E30 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A9141E226E4A92A63D1DD43 /* Assets.xcassets */; };
+		02C78DB210F9842243CCEC8F /* ServerAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88635A0565942040C6C93705 /* ServerAddress.swift */; };
+		2751F921EDCA3482169D881D /* NativeDemo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378C35238B329FD0C701AB79 /* NativeDemo.swift */; };
+		541299531873BB60E6DFB20C /* TVLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F522C5F2781C82D404865F /* TVLink.swift */; };
+		98D79DBE417F6C8F0509EDB6 /* NativeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CB0F1AE836D178DB989E7E5 /* NativeStore.swift */; };
+		9A3CD776F22DAD7B920631EA /* ExerciseStudioTV.swift in Sources */ = {isa = PBXBuildFile; fileRef = D454334C4A5B0EFE018AD9CE /* ExerciseStudioTV.swift */; };
+		E7E6D537226497AE8C0B0C32 /* shared-rules.js in Resources */ = {isa = PBXBuildFile; fileRef = 901BFB0EA64E753C3D46433C /* shared-rules.js */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0A9141E226E4A92A63D1DD43 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		378C35238B329FD0C701AB79 /* NativeDemo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDemo.swift; sourceTree = "<group>"; };
+		5B3B080EA26E123163918A3A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		88635A0565942040C6C93705 /* ServerAddress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerAddress.swift; sourceTree = "<group>"; };
+		8CB0F1AE836D178DB989E7E5 /* NativeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStore.swift; sourceTree = "<group>"; };
+		901BFB0EA64E753C3D46433C /* shared-rules.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "shared-rules.js"; sourceTree = "<group>"; };
+		AB5C38E062B6E377756C7907 /* ExerciseStudioTV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ExerciseStudioTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D454334C4A5B0EFE018AD9CE /* ExerciseStudioTV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseStudioTV.swift; sourceTree = "<group>"; };
+		F3F522C5F2781C82D404865F /* TVLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVLink.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		137D5A7833285DDC10627EA9 = {
+			isa = PBXGroup;
+			children = (
+				0A9141E226E4A92A63D1DD43 /* Assets.xcassets */,
+				38F70A76388DB4CFCBD119B0 /* ExerciseStudio */,
+				518E7C03E6D37EC7A2D6CE96 /* ExerciseStudioTV */,
+				B89516CA4D2084EA8867FB3F /* Resources */,
+				14DBDFBC5BDFD891C8AC55B9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		14DBDFBC5BDFD891C8AC55B9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AB5C38E062B6E377756C7907 /* ExerciseStudioTV.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		38F70A76388DB4CFCBD119B0 /* ExerciseStudio */ = {
+			isa = PBXGroup;
+			children = (
+				378C35238B329FD0C701AB79 /* NativeDemo.swift */,
+				8CB0F1AE836D178DB989E7E5 /* NativeStore.swift */,
+				88635A0565942040C6C93705 /* ServerAddress.swift */,
+				F3F522C5F2781C82D404865F /* TVLink.swift */,
+			);
+			name = ExerciseStudio;
+			path = ../ios/ExerciseStudio;
+			sourceTree = "<group>";
+		};
+		518E7C03E6D37EC7A2D6CE96 /* ExerciseStudioTV */ = {
+			isa = PBXGroup;
+			children = (
+				D454334C4A5B0EFE018AD9CE /* ExerciseStudioTV.swift */,
+				5B3B080EA26E123163918A3A /* Info.plist */,
+			);
+			path = ExerciseStudioTV;
+			sourceTree = "<group>";
+		};
+		B89516CA4D2084EA8867FB3F /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				901BFB0EA64E753C3D46433C /* shared-rules.js */,
+			);
+			name = Resources;
+			path = ../ios/ExerciseStudio/Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BD5CC856414DECA2B937F334 /* ExerciseStudioTV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 671B65DDB3AAD11A1AC735F2 /* Build configuration list for PBXNativeTarget "ExerciseStudioTV" */;
+			buildPhases = (
+				B266BA86A8C6FB47FBD9D8A5 /* Sources */,
+				5713D9BCC678A59B642341AE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ExerciseStudioTV;
+			packageProductDependencies = (
+			);
+			productName = ExerciseStudioTV;
+			productReference = AB5C38E062B6E377756C7907 /* ExerciseStudioTV.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3F9F58F72013A853C317B376 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					BD5CC856414DECA2B937F334 = {
+						DevelopmentTeam = 4YQ5449J68;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = BAC5EAA3995958D4FEA84200 /* Build configuration list for PBXProject "ExerciseStudioTV" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 137D5A7833285DDC10627EA9;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 14DBDFBC5BDFD891C8AC55B9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BD5CC856414DECA2B937F334 /* ExerciseStudioTV */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5713D9BCC678A59B642341AE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				018F917EA8CF0E66CFD21E30 /* Assets.xcassets in Resources */,
+				E7E6D537226497AE8C0B0C32 /* shared-rules.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B266BA86A8C6FB47FBD9D8A5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A3CD776F22DAD7B920631EA /* ExerciseStudioTV.swift in Sources */,
+				2751F921EDCA3482169D881D /* NativeDemo.swift in Sources */,
+				98D79DBE417F6C8F0509EDB6 /* NativeStore.swift in Sources */,
+				02C78DB210F9842243CCEC8F /* ServerAddress.swift in Sources */,
+				541299531873BB60E6DFB20C /* TVLink.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		14E89A0A921CCDA27F531F34 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 4YQ5449J68;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Release;
+		};
+		96685242DDA1B2DF0BA6CC81 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Brand Assets";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ExerciseStudioTV/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Exercise Studio";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Connect to your iPhone to display the active workout.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.anujjha.exercise-studio.tv";
+				SDKROOT = appletvos;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Debug;
+		};
+		A0C18B261F92E0991B9806DD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Brand Assets";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ExerciseStudioTV/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Exercise Studio";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Connect to your iPhone to display the active workout.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.anujjha.exercise-studio.tv";
+				SDKROOT = appletvos;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Release;
+		};
+		BD6AED22FADE3C1E07F1BA2C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 4YQ5449J68;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		671B65DDB3AAD11A1AC735F2 /* Build configuration list for PBXNativeTarget "ExerciseStudioTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96685242DDA1B2DF0BA6CC81 /* Debug */,
+				A0C18B261F92E0991B9806DD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BAC5EAA3995958D4FEA84200 /* Build configuration list for PBXProject "ExerciseStudioTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BD6AED22FADE3C1E07F1BA2C /* Debug */,
+				14E89A0A921CCDA27F531F34 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3F9F58F72013A853C317B376 /* Project object */;
+}

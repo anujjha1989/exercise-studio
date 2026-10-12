@@ -2,6 +2,7 @@ import SwiftUI
 import Charts
 import PhotosUI
 import UniformTypeIdentifiers
+import ImageIO
 
 struct NativeProgress: View {
     @ObservedObject var store: NativeStore
@@ -11,9 +12,27 @@ struct NativeProgress: View {
     @State private var photo: PhotosPickerItem?
     @State private var photos: [[String: String]] = []
     @State private var date = Date()
+    @State private var compare = false
     var body: some View {
         NativeShell(store: store, title: "Progress") {
             Form {
+                Section("Your consistency") {
+                    let summary = store.rule("summary") as? [String:Any] ?? [:]
+                    LabeledContent("Active days · last 7 days", value: String(summary["weekDays"] as? Int ?? 0))
+                    LabeledContent("Completed workouts", value: String(summary["completed"] as? Int ?? 0))
+                    Text("Partial sessions count as activity. Completion still requires your planned sets.").font(.caption).foregroundStyle(.secondary)
+                }
+                Section("Personal records") {
+                    let records = (store.rule("summary") as? [String:Any])?["records"] as? [[String:Any]] ?? []
+                    if records.isEmpty { Text("Your records will appear after you log a workout.").foregroundStyle(.secondary) }
+                    ForEach(records, id: \.recordID) { record in
+                        VStack(alignment:.leading,spacing:4) {
+                            Text(store.exercises.first { $0.id == record["id"] as? String }?.name ?? "Exercise").font(.headline)
+                            Text("\((record["v"] as? Double ?? 0).formatted()) \(record["unit"] as? String ?? "") · \(record["d"] as? String ?? "")").font(.subheadline)
+                            if let change = record["change"] as? Double, change > 0 { Text("+\(change.formatted()) since your first record").font(.caption).foregroundStyle(studioOrange) }
+                        }
+                    }
+                }
                 Section("Body weight") {
                     NativeTrendChart(points: store.rule("weight") as? [[String: Any]] ?? [], unit: "kg")
                     Text("Rolling 7-day average of recorded weigh-ins.").font(.caption).foregroundStyle(.secondary)
@@ -46,15 +65,18 @@ struct NativeProgress: View {
                     }
                 }
                 Section("Progress photos") {
+                    Button("Compare photos", systemImage: "rectangle.split.2x1") { compare = true }.disabled(photos.count < 2)
+                    Text("Photos stay on your Pi and are shown only after sign-in. TV mode never displays them.").font(.caption).foregroundStyle(.secondary)
                     PhotosPicker("Add photo", selection: $photo, matching: .images)
                     ForEach(photos, id: \.photoID) { record in
                         NativePhoto(store: store, name: record["name"] ?? "", date: record["date"] ?? "")
                     }
                 }
             }
-        }.task { await loadPhotos() }
+        }.sheet(isPresented: $compare) { NativePhotoCompare(store:store,photos:photos) }
+        .task { await loadPhotos() }
         .onChange(of: photo) { _, item in Task {
-            guard let data = try? await item?.loadTransferable(type: Data.self), let image = UIImage(data: data), let jpeg = image.jpegData(compressionQuality: 0.8), jpeg.count <= 6 * 1024 * 1024 else { store.message = "Choose a photo smaller than 6 MB."; return }
+            guard let data = try? await item?.loadTransferable(type: Data.self), let image = progressThumbnail(data), let jpeg = image.jpegData(compressionQuality: 0.8), jpeg.count <= 6 * 1024 * 1024 else { store.message = "Choose a photo smaller than 6 MB."; return }
             do { let (_, response) = try await store.request("api/photos?date=" + dayString(date), method: "POST", body: jpeg, contentType: "image/jpeg"); guard response.statusCode == 200 else { throw URLError(.badServerResponse) }; await loadPhotos() } catch { store.message = "Photo upload failed. Try again when connected." }
         } }
     }
@@ -66,7 +88,7 @@ extension Dictionary where Key == String, Value == String { var photoID: String 
 struct NativePhoto: View {
     @ObservedObject var store: NativeStore; let name: String; let date: String
     @State private var image: UIImage?
-    var body: some View { VStack(alignment: .leading) { if let image { Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 300).accessibilityLabel("Progress photo from " + date) }; Text(date).font(.caption) }.task { if let (data, response) = try? await store.request("photos/" + name), response.statusCode == 200 { image = UIImage(data: data) } } }
+    var body: some View { VStack(alignment: .leading) { if let image { Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 300).accessibilityLabel("Progress photo from " + date) }; Text(date).font(.caption) }.task { if let (data, response) = try? await store.request("photos/" + name), response.statusCode == 200 { image = progressThumbnail(data) } } }
 }
 struct NativeTrendChart: View {
     let points: [[String: Any]]; let unit: String
@@ -146,3 +168,31 @@ struct NativeSetup: View {
 }
 
 extension Dictionary where Key == String, Value == Any { var customID: String { self["id"] as? String ?? "" } }
+
+extension Dictionary where Key == String, Value == Any { var recordID: String { self["id"] as? String ?? "" } }
+struct NativePhotoCompare: View {
+    @ObservedObject var store: NativeStore; let photos: [[String:String]]
+    @Environment(\.dismiss) private var dismiss
+    @State private var first = ""
+    @State private var second = ""
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing:16) {
+                    Picker("Earlier photo", selection:$first) { ForEach(photos,id:\.photoID) { Text($0["date"] ?? "Photo").tag($0["name"] ?? "") } }
+                    Picker("Later photo", selection:$second) { ForEach(photos,id:\.photoID) { Text($0["date"] ?? "Photo").tag($0["name"] ?? "") } }
+                    HStack(alignment:.top) {
+                        NativePhoto(store:store,name:first,date:photos.first {$0["name"] == first}?["date"] ?? "").id(first)
+                        NativePhoto(store:store,name:second,date:photos.first {$0["name"] == second}?["date"] ?? "").id(second)
+                    }
+                    Text("For a useful comparison, choose photos with similar lighting, pose and distance.").font(.caption).foregroundStyle(.secondary)
+                }.padding()
+            }.navigationTitle("Compare photos").toolbar { ToolbarItem(placement:.confirmationAction) { Button("Done") { dismiss() } } }
+        }.onAppear { first = photos.first?["name"] ?? ""; second = photos.last?["name"] ?? "" }
+    }
+}
+
+func progressThumbnail(_ data: Data) -> UIImage? {
+    guard let source = CGImageSourceCreateWithData(data as CFData,nil), let thumbnail = CGImageSourceCreateThumbnailAtIndex(source,0,[kCGImageSourceCreateThumbnailFromImageAlways:true,kCGImageSourceThumbnailMaxPixelSize:1600,kCGImageSourceCreateThumbnailWithTransform:true] as CFDictionary) else { return nil }
+    return UIImage(cgImage:thumbnail)
+}

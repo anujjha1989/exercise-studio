@@ -19,3 +19,18 @@ final class CompanionUITests: XCTestCase {
         let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = "Native exercise demo"; attachment.lifetime = .keepAlways; add(attachment)
     }
 }
+
+extension CompanionUITests {
+    func testSessionOptionsAndProgressAreNative() {
+        let app=XCUIApplication();app.launchArguments=["-nativeUITestOffline"];app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout:15))
+        let adjust=app.buttons["Adjust today's session"]
+        if adjust.exists { adjust.tap() } else { app.buttons["Adjust a session"].tap() }
+        XCTAssertTrue(app.navigationBars["Adjust session"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.switches["Bodyweight only"].exists)
+        app.buttons["Cancel"].tap()
+        app.tabBars.buttons["Progress"].tap()
+        XCTAssertTrue(app.staticTexts["Your consistency"].waitForExistence(timeout:5))
+        XCTAssertEqual(app.webViews.count,0)
+    }
+}

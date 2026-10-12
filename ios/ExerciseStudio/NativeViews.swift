@@ -12,17 +12,18 @@ func setLabel(_ set: [String: Any]) -> String {
     return (seconds > 0 ? "\(seconds) sec" : "\(reps) reps" + (kg > 0 ? " · \(kg.formatted()) kg" : "")) + ((set["side"] as? String).map { " · " + $0.capitalized } ?? "")
 }
 
+var studioTesting: Bool {
+    #if DEBUG
+    return ProcessInfo.processInfo.arguments.contains("-nativeUITestOffline") || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil || NSClassFromString("XCTestCase") != nil
+    #else
+    return false
+    #endif
+}
 struct NativeRootView: View {
-    @StateObject private var store = NativeStore()
+    @StateObject private var store = NativeStore(autoSync: !studioTesting)
     @Environment(\.scenePhase) private var phase
     @AppStorage("keepScreenAwake") private var keepAwake = false
-    private var offlineUITest: Bool {
-        #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-nativeUITestOffline")
-        #else
-        false
-        #endif
-    }
+    private var offlineUITest: Bool { studioTesting }
     var body: some View {
         TabView {
             NativeToday(store: store).tabItem { Label("Today", systemImage: "house") }
@@ -34,11 +35,12 @@ struct NativeRootView: View {
         .tint(studioOrange)
         .sheet(isPresented: $store.needsSignIn) { NativeSignIn(store: store).ignoresSafeArea(edges: .bottom) }
         .sheet(item: $store.file) { FileShareView(url: $0.url) }
-        .task { if !offlineUITest { await store.connect() } }
+        .task { if !offlineUITest { store.startReconnection(); await store.connect() } }
         .onAppear { UIApplication.shared.isIdleTimerDisabled = keepAwake && phase == .active }
         .onChange(of: phase) { _, value in
             UIApplication.shared.isIdleTimerDisabled = keepAwake && value == .active
-            if value == .active && !offlineUITest { Task { await store.connect() } }
+            if value == .active && !offlineUITest { store.startReconnection(); Task { await store.connect() } }
+            if value != .active { store.stopReconnection() }
         }
         .onChange(of: keepAwake) { _, value in UIApplication.shared.isIdleTimerDisabled = value && phase == .active }
     }
@@ -58,6 +60,9 @@ struct NativeShell<Content: View>: View {
                 .toolbarBackground(studioPaper, for: .tabBar)
                 .toolbarBackground(.visible, for: .tabBar)
                 .safeAreaInset(edge: .top, spacing: 0) {
+                    if store.pendingCount > 0 && store.message == nil && store.conflicts.isEmpty {
+                        HStack(spacing: 8) { Image(systemName: store.syncing ? "arrow.triangle.2.circlepath" : "icloud.and.arrow.up"); Text(store.syncing ? "Syncing edits…" : "Waiting to sync · \(store.pendingCount) records"); Spacer() }.font(.caption).padding(12).background(.regularMaterial)
+                    }
                     if let message = store.message {
                         HStack { Text(message).font(.caption); Spacer(); Button("Retry") { Task { await store.connect() } } }.padding(12).background(.regularMaterial)
                     }
@@ -92,6 +97,7 @@ struct NativeToday: View {
     @ObservedObject var store: NativeStore
     @State private var selected: Exercise?
     @State private var player: NativeWorkout?
+    @State private var adjust = false
     var body: some View {
         let plan = store.plan()
         NativeShell(store: store, title: "Exercise Studio") {
@@ -101,7 +107,9 @@ struct NativeToday: View {
                     if let plan {
                         Text(plan["name"] as? String ?? "Today's workout").font(.largeTitle.bold())
                         Text("\(plan["sets"] as? Int ?? 2) sets per exercise · \((plan["scheme"] as? [String: Any])?["lo"] as? Int ?? 8)–\((plan["scheme"] as? [String: Any])?["hi"] as? Int ?? 12) reps").foregroundStyle(.secondary)
-                        Button("Start workout") { player = NativeWorkout(store: store, plan: plan) }.buttonStyle(.borderedProminent).controlSize(.large)
+                        Button(NativeWorkout.hasResume(store.address) ? "Resume workout" : "Start workout") { player = NativeWorkout(store: store, plan: plan) }.buttonStyle(.borderedProminent).controlSize(.large)
+                        Button("Adjust today's session", systemImage: "slider.horizontal.3") { adjust = true }
+                            .disabled(NativeWorkout.hasResume(store.address) || (store.day(store.today)["entries"] as? [[String: Any]] ?? []).contains { !($0["sets"] as? [[String: Any]] ?? []).isEmpty })
                         if store.days[store.today] != nil { Text(store.status(store.today).capitalized).font(.headline).foregroundStyle(studioOrange) }
                         ForEach(plan["ids"] as? [String] ?? [], id: \.self) { id in
                             if let exercise = store.exercises.first(where: { $0.id == id }) {
@@ -118,12 +126,14 @@ struct NativeToday: View {
                     } else {
                         Text("Rest day").font(.largeTitle.bold())
                         Text("Let your muscles recover. Take a walk or browse the exercise library.").foregroundStyle(.secondary)
-                        Button("Train anyway") { if let p = store.rule("train") as? [String: Any] { player = NativeWorkout(store: store, plan: p) } }.buttonStyle(.borderedProminent)
+                        Button("Adjust a session", systemImage:"slider.horizontal.3") { adjust = true }
+                        Button(NativeWorkout.hasResume(store.address) ? "Resume workout" : "Train anyway") { if let p = store.rule("train") as? [String: Any] { player = NativeWorkout(store: store, plan: p) } }.buttonStyle(.borderedProminent)
                     }
                     Text("Warm up for 3 minutes with marching, arm circles and slow squats.").font(.footnote).foregroundStyle(.secondary)
                 }.padding()
             }.refreshable { await store.connect() }
         }
+        .sheet(isPresented: $adjust) { NativeSessionOptions(store: store) }
         .sheet(item: $selected) { NativeExerciseDetail(store: store, exercise: $0, date: store.today) }
         .fullScreenCover(item: $player) { NativePlayerView(store: store, workout: $0) }
     }
@@ -160,6 +170,7 @@ struct NativeExerciseDetail: View {
     @State private var editIndex: Int?
     @State private var undo: [String: Any]?
     @State private var runningHold: Date?
+    @State private var seeded = false
     var body: some View {
         NavigationStack {
             Form {
@@ -168,6 +179,12 @@ struct NativeExerciseDetail: View {
                     Text((exercise.muscles ?? [groupName(exercise.g)]).joined(separator: ", ")).font(.subheadline.bold())
                     ForEach(Array(exercise.steps.enumerated()), id: \.offset) { i, step in Text("\(i + 1). \(step)") }
                     if !exercise.tip.isEmpty { Text(exercise.tip).foregroundStyle(.secondary) }
+                }
+                Section("Your target") {
+                    if let target = store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": (store.day(date)["plan"] as? [String: Any])?["scheme"] ?? store.rule("scheme") ?? [:]]) as? [String: Any] {
+                        Text("Last session · " + (target["date"] as? String ?? "") + " · " + setLabel(target["last"] as? [String: Any] ?? [:])).font(.subheadline)
+                        if target["ready"] as? Bool == true { Text("You reached the top of your range in two sessions. Try the next available weight if your form stays comfortable.").font(.caption).foregroundStyle(.secondary) }
+                    } else { Text("Start comfortably and use the form guidance above.").font(.subheadline).foregroundStyle(.secondary) }
                 }
                 Section(editIndex == nil ? "Log set" : "Edit set") {
                     if exercise.timed == 1 {
@@ -183,8 +200,14 @@ struct NativeExerciseDetail: View {
                         guard kg.isFinite, kg >= 0, kg <= 1000 else { store.message = "Enter a weight between 0 and 1000 kg."; return }
                         var set: [String: Any] = exercise.timed == 1 ? ["s": seconds] : ["r": reps]
                         if kg > 0 { set["kg"] = kg }; if exercise.unilateral == true { set["side"] = side }
-                        store.addSet(date, exercise, set, editIndex: editIndex); editIndex = nil; onLog?(); UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    }.font(.headline).tint(studioOrange)
+                        let isNew = editIndex == nil; store.addSet(date, exercise, set, editIndex: editIndex); editIndex = nil; if isNew { onLog?() }; UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    }.font(.headline).tint(studioOrange).buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth:.infinity,minHeight:44)
+                    if editIndex == nil, let last = lastSet {
+                        Button("Repeat last set") {
+                            var repeated = last; if exercise.unilateral == true { repeated["side"] = side }
+                            store.addSet(date, exercise, repeated); onLog?(); UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }.font(.headline).frame(minHeight: 44)
+                    }
                     if editIndex != nil { Button("Cancel edit") { editIndex = nil } }
                 }
                 Section("Recorded sets · \(date)") {
@@ -196,8 +219,19 @@ struct NativeExerciseDetail: View {
                     if let undo { Button("Undo removed set") { store.addSet(date, exercise, undo); self.undo = nil } }
                 }
             }.navigationTitle(exercise.name).navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }.onAppear {
+            guard !seeded else { return }; seeded = true
+            let target = store.rule("recommendation", ["id": exercise.id, "date": date]) as? [String: Any]
+            reps = target?["reps"] as? Int ?? (store.rule("scheme") as? [String: Any])?["lo"] as? Int ?? 8
+            seconds = target?["seconds"] as? Int ?? 30; kg = target?["kg"] as? Double ?? 0
+            if exercise.unilateral == true {
+                let sets = currentSets
+                side = sets.filter { $0["side"] as? String == "left" }.count > sets.filter { $0["side"] as? String == "right" }.count ? "right" : "left"
+            }
         }
     }
+    private var currentSets: [[String: Any]] { (store.day(date)["entries"] as? [[String: Any]] ?? []).first { $0["ex"] as? String == exercise.id }?["sets"] as? [[String: Any]] ?? [] }
+    private var lastSet: [String: Any]? { currentSets.last ?? (store.rule("recommendation", ["id": exercise.id, "date": date]) as? [String: Any])?["last"] as? [String: Any] }
 }
 struct NativeHistory: View {
     @ObservedObject var store: NativeStore

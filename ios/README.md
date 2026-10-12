@@ -21,3 +21,15 @@ Rebuild shared resources after exercise/rule changes with `node scripts/stage-io
 Unit tests cover all 54 exercise definitions and finite poses, frozen targets, both sides, filtering, durable local data, and revision-checked conflict/save behavior. UI tests use offline simulator data to check native library/search/demo controls and absence of workout web views. No test writes user workout data. The real HTTPS sign-in/records and device installation need a separate physical-phone check.
 
 Before relying on a release, check both themes, demo motion, scheduled/custom logging, edit/undo, partial/complete history, pause/resume, relaunch, offline queued logging/reconnection, conflict handling, photos, CSV/JSON/archive sharing and restore confirmation on the intended iPhone. No Pi deployment is needed for the native app. The Pi remains the API/data server. Public App Store release is outside this personal-use scope.
+
+## Workout improvements (1.1)
+
+Native demos add separate muscle surfaces, assisting-muscle highlights, fibres, a starting-position control and an optional hand-movement path. Geometry is reused, active playback is capped at 30 fps, and paused/background demos stop their render loop. Exercise definitions are decoded once per profile change; per-frame pose calls do not pass your workout history into JavaScriptCore.
+
+Targets use the latest previous session. A heavier available dumbbell is suggested only after two sessions meeting every prescribed set at the top of the rep range, including both sides. Suggestions never rewrite recorded sets. Repeat-last-set, rest completion haptics and durable paused rest timers reduce logging work. Editing a set does not start rest or count as new work.
+
+Today's session can use a shorter time budget or temporary equipment restrictions, with substitutions matching muscle area, movement, unilateral and timed status. Logged sessions and unfinished resumed workouts retain their frozen plan. Progress adds consistency, per-exercise measured records and private photo comparison; photo decode/upload is bounded to 1600 pixels.
+
+Queued resource count is shown only while edits are pending. Foreground network monitoring and a 20-second pending-edit retry reconnect without requiring another edit. Existing If-Match conflict handling stays in place. Inactive app scenes stop retry monitoring; active workouts pause when leaving the app.
+
+Apple TV display is an optional local connection; see `tvos/README.md`. No Pi API or security configuration change is required. The source-owned TV app shares the renderer and bundled rules, while the phone remains the only workout logging interface.

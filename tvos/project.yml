@@ -1,0 +1,40 @@
+name: ExerciseStudioTV
+options:
+  deploymentTarget:
+    tvOS: '17.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: 4YQ5449J68
+targets:
+  ExerciseStudioTV:
+    type: application
+    platform: tvOS
+    info:
+      path: ExerciseStudioTV/Info.plist
+      properties:
+        NSBonjourServices: ['_exercisestudio._tcp']
+    sources:
+      - ExerciseStudioTV
+      - Assets.xcassets
+      - ../ios/ExerciseStudio/NativeStore.swift
+      - ../ios/ExerciseStudio/NativeDemo.swift
+      - ../ios/ExerciseStudio/TVLink.swift
+      - ../ios/ExerciseStudio/ServerAddress.swift
+      - ../ios/ExerciseStudio/Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anujjha.exercise-studio.tv
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Exercise Studio
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: Connect to your iPhone to display the active workout.
+        ASSETCATALOG_COMPILER_APPICON_NAME: Brand Assets
+        MARKETING_VERSION: '1.1'
+        CURRENT_PROJECT_VERSION: '2'
+schemes:
+  ExerciseStudioTV:
+    build:
+      targets:
+        ExerciseStudioTV: all

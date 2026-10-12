@@ -51,7 +51,29 @@ var window=this;
       return {d:point.d,v:Math.round(window.reduce((sum,p)=>sum+p.kg,0)/window.length*10)/10};
     });
   }
-  const api={eligible,setCount,status,elapsed,estimatedMinutes,fitTime,trend,weightTrend};
+  function recommendation(days,id,date,scheme,weights=[],unilateral=false){
+    const dates=Object.keys(days).filter(d=>d<date).sort().reverse();
+    const sessions=dates.map(d=>({date:d,sets:(days[d].entries||[]).filter(e=>e.ex===id).flatMap(e=>e.sets||[])})).filter(x=>x.sets.length);
+    if(!sessions.length)return null;
+    const last=sessions[0],set=last.sets[last.sets.length-1],kg=set.kg||0;
+    const qualified=x=>x.sets.length>=scheme.sets*(unilateral?2:1)&&x.sets.every(s=>(s.r||0)>=scheme.hi&&(s.kg||0)===kg)&&(!unilateral||['left','right'].every(side=>x.sets.filter(s=>s.side===side||!s.side).length>=scheme.sets));
+    const ready=kg>0&&sessions.length>=2&&sessions.slice(0,2).every(qualified);
+    const next=weights.filter(w=>Number.isFinite(w)&&w>kg).sort((a,b)=>a-b)[0];
+    return {date:last.date,last:set,kg:ready&&next?next:kg,reps:ready&&next?scheme.lo:Math.min(scheme.hi,Math.max(scheme.lo,(set.r||scheme.lo)+(set.r>=scheme.lo?1:0))),seconds:set.s||scheme.hold,ready:ready&&!!next};
+  }
+  function substitutes(ex,all,profile,used=[]){
+    return all.filter(e=>e.id!==ex.id&&!used.includes(e.id)&&eligible(e,profile)&&e.g===ex.g&&e.mv===ex.mv&&!!e.timed===!!ex.timed&&!!e.unilateral===!!ex.unilateral);
+  }
+  function summary(days,date){
+    const keys=Object.keys(days).filter(d=>d<=date&&Number.isFinite(Date.parse(d+'T00:00:00Z'))).sort();
+    const end=Date.parse(date+'T00:00:00Z'),weekStart=end-6*86400000;
+    const active=keys.filter(d=>(days[d].entries||[]).some(e=>(e.sets||[]).length));
+    const records=[];
+    const ids=new Set(active.flatMap(d=>(days[d].entries||[]).map(e=>e.ex)));
+    for(const id of ids){const points=trend(days,id);if(points.length){const best=points.reduce((a,b)=>b.v>a.v||b.v===a.v&&(b.r||0)>(a.r||0)?b:a);const first=points[0];records.push({id,...best,change:best.v-first.v});}}
+    return {activeDays:active.length,weekDays:active.filter(d=>Date.parse(d+'T00:00:00Z')>=weekStart).length,completed:keys.filter(d=>status(days[d])==='completed').length,records};
+  }
+  const api={eligible,setCount,status,elapsed,estimatedMinutes,fitTime,trend,weightTrend,recommendation,substitutes,summary};
   if(typeof module!=="undefined")module.exports=api;else root.Workout=api;
 })(typeof window!=="undefined"?window:this);
 
@@ -411,6 +433,8 @@ function nextPlan(){for(let i=1;i<=7;i++){const d=addD(TODAY,i),s=planFor(d);if(
 function snapshotPlan(sess){const sc=scheme();return {name:sess.name,ids:sess.list.map(x=>x.id||x),sets:sc.sets,scheme:sc,unilateral:sess.list.map(x=>exById(x.id||x)).filter(e=>e&&e.unilateral).map(e=>e.id)}}
 
 var NativeRules={
+ timing:id=>JSON.stringify({beat:FigureMath.beat(exById(id)),poses:exById(id).poses.length}),
+ pose:(id,time)=>JSON.stringify(FigureMath.skeleton(exById(id),time)),
  defaultProfile:()=>JSON.stringify(defProfile()),
  run:(state,method,args)=>{S.profile=fixProfile(state.profile);S.days=state.days||{};TODAY=args.date||ymd(new Date());
  let result;
@@ -423,6 +447,10 @@ var NativeRules={
  case 'count':result=Workout.setCount(args.day,args.id);break;
  case 'weight':result=Workout.weightTrend(S.profile.weigh);break;
  case 'trend':result=Workout.trend(S.days,args.id);break;
+ case 'recommendation':result=Workout.recommendation(S.days,args.id,TODAY,args.scheme||scheme(),S.profile.dbs,!!exById(args.id)?.unilateral);break;
+ case 'summary':result=Workout.summary(S.days,TODAY);break;
+ case 'substitutes':result=Workout.substitutes(exById(args.id),exAll(),S.profile,args.used||[]).map(e=>e.id);break;
+ case 'flex':{const previous=S.profile;S.profile={...previous,minutes:args.minutes||previous.minutes,hasDumbbells:args.bodyweight?false:previous.hasDumbbells,dbs:args.bodyweight?[]:previous.dbs,chair:args.noChair?false:previous.chair};result=snapshotPlan(buildSession(Math.max(0,previous.days.indexOf(wdOf(TODAY))),TODAY));S.profile=previous;break;}
  case 'skeleton':result=FigureMath.skeleton(exById(args.id),args.time||0);break;
  }
  return JSON.stringify(result);
