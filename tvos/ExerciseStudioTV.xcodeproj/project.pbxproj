@@ -10,6 +10,7 @@
 		018F917EA8CF0E66CFD21E30 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A9141E226E4A92A63D1DD43 /* Assets.xcassets */; };
 		02C78DB210F9842243CCEC8F /* ServerAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88635A0565942040C6C93705 /* ServerAddress.swift */; };
 		2751F921EDCA3482169D881D /* NativeDemo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378C35238B329FD0C701AB79 /* NativeDemo.swift */; };
+		4114D3D9AE252D49392BD1B2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A2F3415F83EF311F16F0E908 /* PrivacyInfo.xcprivacy */; };
 		541299531873BB60E6DFB20C /* TVLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F522C5F2781C82D404865F /* TVLink.swift */; };
 		98D79DBE417F6C8F0509EDB6 /* NativeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CB0F1AE836D178DB989E7E5 /* NativeStore.swift */; };
 		9A3CD776F22DAD7B920631EA /* ExerciseStudioTV.swift in Sources */ = {isa = PBXBuildFile; fileRef = D454334C4A5B0EFE018AD9CE /* ExerciseStudioTV.swift */; };
@@ -23,6 +24,7 @@
 		88635A0565942040C6C93705 /* ServerAddress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerAddress.swift; sourceTree = "<group>"; };
 		8CB0F1AE836D178DB989E7E5 /* NativeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStore.swift; sourceTree = "<group>"; };
 		901BFB0EA64E753C3D46433C /* shared-rules.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "shared-rules.js"; sourceTree = "<group>"; };
+		A2F3415F83EF311F16F0E908 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AB5C38E062B6E377756C7907 /* ExerciseStudioTV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ExerciseStudioTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D454334C4A5B0EFE018AD9CE /* ExerciseStudioTV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseStudioTV.swift; sourceTree = "<group>"; };
 		F3F522C5F2781C82D404865F /* TVLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVLink.swift; sourceTree = "<group>"; };
@@ -53,6 +55,7 @@
 			children = (
 				378C35238B329FD0C701AB79 /* NativeDemo.swift */,
 				8CB0F1AE836D178DB989E7E5 /* NativeStore.swift */,
+				A2F3415F83EF311F16F0E908 /* PrivacyInfo.xcprivacy */,
 				88635A0565942040C6C93705 /* ServerAddress.swift */,
 				F3F522C5F2781C82D404865F /* TVLink.swift */,
 			);
@@ -139,6 +142,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				018F917EA8CF0E66CFD21E30 /* Assets.xcassets in Resources */,
+				4114D3D9AE252D49392BD1B2 /* PrivacyInfo.xcprivacy in Resources */,
 				E7E6D537226497AE8C0B0C32 /* shared-rules.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

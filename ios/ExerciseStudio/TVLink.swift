@@ -21,7 +21,8 @@ final class TVLink: ObservableObject {
     private var connected = false
     private var buffer = Data()
     private var failures = 0
-    private var seenNonces = Set<Data>()
+    private var sendSequence = 0
+    private var receiveSequence = -1
     private var latest: [String:Any] = [:]
     func host() {
         stop()
@@ -34,7 +35,7 @@ final class TVLink: ObservableObject {
             let token = generation
             listener.newConnectionHandler = { [weak self] connection in Task { @MainActor in
                 guard let self, self.generation == token, self.connections.count < 1 else { connection.cancel(); return }
-                self.buffer = Data(); self.seenNonces = []; self.connections.append(connection); self.prepare(connection, host:true)
+                self.buffer = Data(); self.sendSequence = 0; self.receiveSequence = -1; self.connections.append(connection); self.prepare(connection, host:true)
             } }
             listener.stateUpdateHandler = { [weak self] state in Task { @MainActor in
                 guard let self,self.generation == token else { return }
@@ -59,7 +60,7 @@ final class TVLink: ObservableObject {
     func join(_ endpoint:NWEndpoint, code:String) {
         let normalized = code.uppercased().filter { $0.isLetter || $0.isNumber }
         guard normalized.count == 12 else { status = "Enter the 12-character code from your iPhone"; return }
-        connections.forEach { $0.cancel() }; connections = []; buffer = Data(); seenNonces = []; connected = false
+        connections.forEach { $0.cancel() }; connections = []; buffer = Data(); sendSequence = 0; receiveSequence = -1; connected = false
         key = makeKey(normalized)
         let connection = NWConnection(to:endpoint,using:.tcp); connections = [connection]; prepare(connection,host:false)
     }
@@ -69,7 +70,7 @@ final class TVLink: ObservableObject {
     }
     func stop() {
         generation = UUID(); listener?.cancel(); browser?.cancel(); connections.forEach { $0.cancel() }
-        listener = nil; browser = nil; connections = []; devices = []; key = nil; buffer = Data(); seenNonces = []; connected = false; snapshot = [:]; status = "Not connected"; code = ""
+        listener = nil; browser = nil; connections = []; devices = []; key = nil; buffer = Data(); sendSequence = 0; receiveSequence = -1; connected = false; snapshot = [:]; status = "Not connected"; code = ""
     }
     private func makeKey(_ code:String) -> SymmetricKey { SymmetricKey(data:SHA256.hash(data:Data(("ExerciseStudioTV-v1:"+code).utf8))) }
     private func prepare(_ connection:NWConnection,host:Bool) {
@@ -93,7 +94,8 @@ final class TVLink: ObservableObject {
         }
     }
     private func send(_ value:[String:Any],on connection:NWConnection) {
-        guard let key,let data = try? JSONSerialization.data(withJSONObject:value),data.count < 65536,
+        var payload = value; payload["_sequence"] = sendSequence; sendSequence += 1
+        guard let key,let data = try? JSONSerialization.data(withJSONObject:payload),data.count < 65536,
               let encrypted = try? AES.GCM.seal(data,using:key).combined else { return }
         var size = UInt32(encrypted.count).bigEndian
         var frame = withUnsafeBytes(of:&size) { Data($0) }; frame.append(encrypted)
@@ -111,10 +113,8 @@ final class TVLink: ObservableObject {
                 guard let key = self.key,let box = try? AES.GCM.SealedBox(combined:encrypted),let clear = try? AES.GCM.open(box,using:key),let value = try? JSONSerialization.jsonObject(with:clear) as? [String:Any] else {
                     self.failures += 1; connection.cancel(); if host && self.failures >= 5 { self.stop(); self.status = "Pairing stopped after repeated incorrect codes. Start TV mode again." }; return
                 }
-                let nonce = Data(encrypted.prefix(12))
-                guard !self.seenNonces.contains(nonce) else { continue }
-                self.seenNonces.insert(nonce)
-                if self.seenNonces.count > 1024 { self.seenNonces = [nonce] }
+                guard let sequence = value["_sequence"] as? Int, sequence > self.receiveSequence else { continue }
+                self.receiveSequence = sequence
                 if host {
                     guard value["hello"] as? Bool == true else { connection.cancel(); return }
                     self.connected = true; self.status = "Connected to Apple TV"; self.send(self.latest,on:connection)

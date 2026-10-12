@@ -22,6 +22,7 @@ targets:
       - ../ios/ExerciseStudio/NativeDemo.swift
       - ../ios/ExerciseStudio/TVLink.swift
       - ../ios/ExerciseStudio/ServerAddress.swift
+      - ../ios/ExerciseStudio/PrivacyInfo.xcprivacy
       - ../ios/ExerciseStudio/Resources
     settings:
       base:
