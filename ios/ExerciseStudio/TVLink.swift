@@ -12,7 +12,7 @@ final class TVLink: ObservableObject {
     @Published var status = "Not connected"
     @Published var snapshot: [String:Any] = [:]
     @Published var devices: [NWBrowser.Result] = []
-    var port: NWEndpoint.Port? { listener?.port }
+    var port: NWEndpoint.Port? { guard let port=listener?.port, port.rawValue > 0 else { return nil }; return port }
     private var listener: NWListener?
     private var browser: NWBrowser?
     private var connections: [NWConnection] = []

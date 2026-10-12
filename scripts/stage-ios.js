@@ -16,7 +16,7 @@ const source='var window=this;\n'+fs.readFileSync('public/workout.js','utf8')+'\
  case 'status':result=Workout.status(args.day);break;
  case 'count':result=Workout.setCount(args.day,args.id);break;
  case 'weight':result=Workout.weightTrend(S.profile.weigh);break;
- case 'trend':result=Workout.trend(S.days,args.id).filter(p=>p.d<=TODAY);break;
+ case 'trend':result=Workout.trend(S.days,args.id,TODAY);break;
  case 'recommendation':result=Workout.recommendation(S.days,args.id,TODAY,args.scheme||scheme(),S.profile.dbs,!!exById(args.id)?.unilateral);break;
  case 'summary':result=Workout.summary(S.days,TODAY);break;
  case 'substitutes':result=Workout.substitutes(exById(args.id),exAll(),S.profile,args.used||[]).map(e=>e.id);break;

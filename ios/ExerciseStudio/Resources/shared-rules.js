@@ -34,8 +34,8 @@ var window=this;
     let remaining=profile.minutes*60-180;
     return list.filter(e=>{const seconds=scheme.sets*(40+scheme.rest)*(e.unilateral?2:1);if(seconds>remaining)return false;remaining-=seconds;return true});
   }
-  function trend(days,id){
-    const records=Object.keys(days).sort().map(d=>({d,sets:(days[d].entries||[]).filter(e=>e.ex===id).flatMap(e=>e.sets||[])})).filter(x=>x.sets.length);
+  function trend(days,id,end){
+    const records=Object.keys(days).filter(d=>!end||d<=end).sort().map(d=>({d,sets:(days[d].entries||[]).filter(e=>e.ex===id).flatMap(e=>e.sets||[])})).filter(x=>x.sets.length);
     const weighted=records.some(x=>x.sets.some(s=>s.kg>0)),timed=!weighted&&records.some(x=>x.sets.some(s=>s.s>0));
     return records.flatMap(({d,sets})=>{
       const compatible=sets.filter(s=>weighted?s.kg>0:timed?s.s>0:s.r>0);
@@ -447,7 +447,7 @@ var NativeRules={
  case 'status':result=Workout.status(args.day);break;
  case 'count':result=Workout.setCount(args.day,args.id);break;
  case 'weight':result=Workout.weightTrend(S.profile.weigh);break;
- case 'trend':result=Workout.trend(S.days,args.id).filter(p=>p.d<=TODAY);break;
+ case 'trend':result=Workout.trend(S.days,args.id,TODAY);break;
  case 'recommendation':result=Workout.recommendation(S.days,args.id,TODAY,args.scheme||scheme(),S.profile.dbs,!!exById(args.id)?.unilateral);break;
  case 'summary':result=Workout.summary(S.days,TODAY);break;
  case 'substitutes':result=Workout.substitutes(exById(args.id),exAll(),S.profile,args.used||[]).map(e=>e.id);break;

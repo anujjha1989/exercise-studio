@@ -161,7 +161,7 @@ function journey(){
 }
 function records(skip){
   const days=Object.fromEntries(Object.entries(S.days).filter(([d])=>d!==skip&&d<=TODAY));
-  return Object.fromEntries(Workout.summary(days,TODAY).records.map(record=>[record.id,{v:record.v,t:record.unit==="kg"?record.v+" kg × "+record.r:record.v+" "+record.unit,d:record.d}]));
+  return Object.fromEntries(Workout.summary(days,TODAY).records.map(record=>[record.id,{v:record.v,unit:record.unit,r:record.r,t:record.unit==="kg"?record.v+" kg × "+record.r:record.v+" "+record.unit,d:record.d}]));
 }
 function lastSets(id,before){
   const ks=Object.keys(S.days).filter(k=>k<before).sort().reverse();
@@ -252,7 +252,7 @@ function strengthHtml(){
   const ids=[...new Set(activityDays().flatMap(d=>S.days[d].entries.map(e=>e.ex)))];
   if(!ids.length)return `<div class="card stack"><h3 class="wide">Strength progress</h3><p class="mute">Log sets to compare your best set for each exercise over time.</p></div>`;
   if(!ids.includes(UI.strength))UI.strength=ids[0];
-  const pts=Workout.trend(S.days,UI.strength).filter(x=>x.d<=TODAY),last=pts[pts.length-1];
+  const pts=Workout.trend(S.days,UI.strength,TODAY),last=pts[pts.length-1];
   return `<div class="card stack"><h3 class="wide">Strength progress</h3><label class="f">Exercise<select id="strength-ex">${ids.map(id=>`<option value="${id}" ${UI.strength===id?"selected":""}>${esc(exName(id))}</option>`).join("")}</select></label>${lineChart(pts,null,last.unit)}<p class="sm mute">Best logged set each day${last.unit==="kg"?"; compare reps as well as load":""}. ${last.unit==="kg"?pts.slice(-4).map(x=>`${short(x.d)}: ${x.v} kg × ${x.r}`).join(" · "):""}</p></div>`;
 }
 /* ================= exercise sheet ================= */
@@ -312,7 +312,7 @@ function renderPlayer(){
   if(P.phase==="sum"){
     const d=S.days[P.date]||{entries:[],min:0},st=dayStats(d),mins=Math.round(Workout.elapsed(P)/60000);
     const complete=P.list.every(id=>doneSets(P.date,id)>=sc.sets);
-    const now=records(),prs=Object.keys(now).filter(id=>now[id].d===P.date&&(!P.before[id]||now[id].v>P.before[id].v));
+    const now=records(),prs=Object.keys(now).filter(id=>now[id].d===P.date&&(!P.before[id]||now[id].unit!==P.before[id].unit||now[id].v>P.before[id].v||now[id].v===P.before[id].v&&(now[id].r||0)>(P.before[id].r||0)));
     playerEl.className="player g-full";CTX=null;
     playerEl.innerHTML=`<div class="pcenter"><span class="eyebrow" style="color:#fff">${esc(P.name)} · ${nice(P.date)}</span><h1 class="wide" style="font-size:clamp(40px,11vw,96px)">${complete?"Workout complete":st.sets?"Workout saved as partial":"Workout cancelled"}</h1>
       <div class="stat3"><div><b>${mins}</b><span>minutes</span></div><div><b>${st.sets}</b><span>sets</span></div><div><b>${Math.round(st.vol)}</b><span>kg lifted</span></div></div>
