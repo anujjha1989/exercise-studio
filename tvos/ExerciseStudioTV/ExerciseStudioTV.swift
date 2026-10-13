@@ -21,11 +21,11 @@ struct TVWorkoutView: View {
                 if let id = link.snapshot["exercise"] as? String, let ex = store.exercises.first(where: {$0.id == id}) {
                     TimelineView(.periodic(from:.now,by:1)) { _ in
                         HStack(spacing:48) {
-                            NativeDemo(store:store,exercise:ex, externallyPaused: stale || link.snapshot["paused"] as? Bool == true).frame(width:850,height:650).clipShape(RoundedRectangle(cornerRadius:28))
+                            NativeDemo(store:store,exercise:ex, externallyPaused: stale || link.snapshot["paused"] as? Bool == true, bodyweightOnly: link.snapshot["bodyweightOnly"] as? Bool == true).frame(width:850,height:650).clipShape(RoundedRectangle(cornerRadius:28))
                             VStack(alignment:.leading,spacing:24) {
                                 Text(ex.name).font(.largeTitle.bold())
                                 Text("Exercise \((link.snapshot["index"] as? Int ?? 0)+1) of \(link.snapshot["total"] as? Int ?? 1)").foregroundStyle(.secondary)
-                                Text("\(link.snapshot["sets"] as? Int ?? 0) / \(link.snapshot["target"] as? Int ?? 2) sets").font(.title)
+                                if link.snapshot["preview"] as? Bool == true { Text("Exercise preview").font(.title) } else { Text("\(link.snapshot["sets"] as? Int ?? 0) / \(link.snapshot["target"] as? Int ?? 2) sets").font(.title) }
                                 if stale { Text("Connection paused · check your iPhone").foregroundStyle(.orange) }
                                 else if link.snapshot["paused"] as? Bool == true { Text("Workout paused").foregroundStyle(.orange) }
                                 else if let rest=link.snapshot["rest"] as? Int,rest>0 { Text("Rest · \(rest) sec").font(.title.monospacedDigit()) }

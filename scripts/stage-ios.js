@@ -20,7 +20,7 @@ const source='var window=this;\n'+fs.readFileSync('public/workout.js','utf8')+'\
  case 'recommendation':result=Workout.recommendation(S.days,args.id,TODAY,args.scheme||scheme(),S.profile.dbs,!!exById(args.id)?.unilateral);break;
  case 'summary':result=Workout.summary(S.days,TODAY);break;
  case 'substitutes':result=Workout.substitutes(exById(args.id),exAll(),S.profile,args.used||[]).map(e=>e.id);break;
- case 'flex':{const previous=S.profile;S.profile={...previous,minutes:args.minutes||previous.minutes,hasDumbbells:args.bodyweight?false:previous.hasDumbbells,dbs:args.bodyweight?[]:previous.dbs,chair:args.noChair?false:previous.chair};result=snapshotPlan(buildSession(Math.max(0,previous.days.indexOf(wdOf(TODAY))),TODAY));S.profile=previous;break;}
+ case 'flex':{const previous=S.profile;S.profile={...previous,minutes:args.minutes||previous.minutes,hasDumbbells:args.bodyweight?false:previous.hasDumbbells,dbs:args.bodyweight?[]:previous.dbs,chair:args.noChair?false:previous.chair};result=snapshotPlan(buildSession(Math.max(0,previous.days.indexOf(wdOf(TODAY))),TODAY));result.bodyweightOnly=!!args.bodyweight;S.profile=previous;break;}
  case 'skeleton':result=FigureMath.skeleton(exById(args.id),args.time||0);break;
  }
  return JSON.stringify(result);

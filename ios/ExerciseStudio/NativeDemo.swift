@@ -24,7 +24,7 @@ final class NativeFigure: ObservableObject {
         let light = SCNNode(); light.light = SCNLight(); light.light?.type = .omni; light.light?.intensity = 1300; light.position = SCNVector3(-70, 130, 90); scene.rootNode.addChildNode(light)
         let floor = SCNNode(geometry: SCNFloor()); floor.geometry?.firstMaterial?.diffuse.contents = UIColor(white: 0.97, alpha: 1); floor.geometry?.firstMaterial?.roughness.contents = 1; floor.position.y = -2; scene.rootNode.addChildNode(floor)
     }
-    func update(store: NativeStore, exercise: Exercise, time: Double, highlights: Bool, view: Int, showPath: Bool = false) {
+    func update(store: NativeStore, exercise: Exercise, time: Double, highlights: Bool, view: Int, showPath: Bool = false, bodyweightOnly: Bool = false) {
         guard let skeleton = store.skeleton(exercise.id,time:time), let neck = skeleton["neck"] as? [Double], let hip = skeleton["hip"] as? [Double], let arms = skeleton["arms"] as? [[[Double]]], let legs = skeleton["legs"] as? [[[Double]]] else { return }
         for node in nodes.values { node.isHidden = true }
         let n = vector(neck), h = vector(hip), up = simd_normalize(n-h), front = simd_normalize(simd_cross(SIMD3<Float>(1,0,0), up)), orientation = simd_quatf(from: SIMD3<Float>(0,1,0), to: up)
@@ -84,7 +84,7 @@ final class NativeFigure: ObservableObject {
             muscles("shin",knee,foot,[(0.3,1,-1.5,1.8,0.27,1.9,"calves"),(0.33,-1,-1.6,1.9,0.29,2,"calves")])
             ell("knee\(i)",position:knee,size:SIMD3(2.5,2.4,2.6),color:gray)
             ell("foot\(i)",position:foot+SIMD3(0,0,2.8),size:SIMD3(2.1,1.25,3.6),color:gray)
-            if exercise.db == 1 && (exercise.singleBell != true || i == 0) {
+            if exercise.db == 1 && !(bodyweightOnly && exercise.eq == "both") && (exercise.singleBell != true || i == 0) {
                 let center=exercise.singleBell == true ? (vector(arms[0][2])+vector(arms[1][2]))*0.5 : hand
                 bone("handle\(i)",center-SIMD3(6,0,0),center+SIMD3(6,0,0),width:0.7,color:.darkGray)
                 for side in [-1,1] { ell("weight\(i)\(side)",position:center+SIMD3(Float(side)*5.5,0,0),size:SIMD3(1.7,4,4),color:.black) }
@@ -160,6 +160,7 @@ struct NativeSceneView: UIViewRepresentable {
 struct NativeDemo: View {
     @ObservedObject var store: NativeStore; let exercise: Exercise
     var externallyPaused = false
+    var bodyweightOnly = false
     @StateObject private var figure = NativeFigure()
     @Environment(\.scenePhase) private var phase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -195,5 +196,5 @@ struct NativeDemo: View {
         .onChange(of: exercise.id) { _, _ in time = 0; draw() }
         .onDisappear { playing = false }
     }
-    private func draw() { figure.update(store:store,exercise:exercise,time:time,highlights:highlights,view:view,showPath:showPath) }
+    private func draw() { figure.update(store:store,exercise:exercise,time:time,highlights:highlights,view:view,showPath:showPath,bodyweightOnly:bodyweightOnly) }
 }

@@ -108,6 +108,7 @@ struct NativeSetup: View {
     @State private var db = 0.0
     @State private var address = ""
     @State private var importFile = false
+    @State private var tvPreview = false
     @State private var restore: [String: Any]?
     @State private var confirmRestore = false
     @State private var customName = ""
@@ -140,6 +141,7 @@ struct NativeSetup: View {
                     ForEach(store.profile["custom"] as? [[String: Any]] ?? [], id: \.customID) { item in Text(item["name"] as? String ?? "Custom exercise") }
                         .onDelete { indices in var list = store.profile["custom"] as? [[String: Any]] ?? []; list.remove(atOffsets: indices); store.changeProfile("custom", list) }
                 }
+                Section("Apple TV") { Button("Connect Apple TV",systemImage:"appletv") { tvPreview=true } }
                 Section("This iPhone") {
                     Toggle("Keep screen awake", isOn: $keepAwake)
                     TextField("HTTPS app address", text: $address).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
@@ -155,6 +157,7 @@ struct NativeSetup: View {
                 }
             }
         }.onAppear { address = store.address.absoluteString }
+        .sheet(isPresented:$tvPreview) { NativeTVPreview(store:store) }
         .fileImporter(isPresented: $importFile, allowedContentTypes: [.json]) { result in
             do { let url = try result.get(); guard url.startAccessingSecurityScopedResource() else { return }; defer { url.stopAccessingSecurityScopedResource() }; restore = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any]; if restore?["days"] != nil { confirmRestore = true } } catch { store.message = "Could not read this backup." }
         }

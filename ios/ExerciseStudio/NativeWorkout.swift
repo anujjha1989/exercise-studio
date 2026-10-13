@@ -81,7 +81,7 @@ struct NativePlayerView: View {
                             .padding().background(.background,in:RoundedRectangle(cornerRadius:16))
                         } else { Button("Show workout on Apple TV",systemImage:"appletv") { tv.host(); publishTV() } }
                         Text(exercise.name).font(.largeTitle.bold()).multilineTextAlignment(.center)
-                        NativeDemo(store: store, exercise: exercise, externallyPaused: workout.paused || logging).frame(height: 320).clipShape(RoundedRectangle(cornerRadius: 20))
+                        NativeDemo(store: store, exercise: exercise, externallyPaused: workout.paused || logging, bodyweightOnly: workout.plan["bodyweightOnly"] as? Bool == true).frame(height: 320).clipShape(RoundedRectangle(cornerRadius: 20))
                         Text("\(store.count(workout.date, exercise.id)) / \(workout.plan["sets"] as? Int ?? 2) sets · \(groupName(exercise.g))").font(.headline)
                         if workout.paused { Text("Workout paused").font(.title3) }
                         else if let end = workout.restEnd {
@@ -114,7 +114,7 @@ struct NativePlayerView: View {
     private func publishTV() {
         guard !tv.code.isEmpty, workout.ids.indices.contains(workout.index) else { return }
         let id = workout.ids[workout.index]
-        tv.publish(["exercise":id,"name":store.exercises.first {$0.id == id}?.name ?? "Exercise","index":workout.index,"total":workout.ids.count,"sets":store.count(workout.date,id),"target":workout.plan["sets"] as? Int ?? 2,"paused":workout.paused,"rest":max(0,Int(workout.restEnd?.timeIntervalSinceNow ?? 0)),"elapsed":workout.elapsed])
+        tv.publish(["exercise":id,"name":store.exercises.first {$0.id == id}?.name ?? "Exercise","index":workout.index,"total":workout.ids.count,"sets":store.count(workout.date,id),"target":workout.plan["sets"] as? Int ?? 2,"paused":workout.paused,"rest":max(0,Int(workout.restEnd?.timeIntervalSinceNow ?? 0)),"elapsed":workout.elapsed,"bodyweightOnly":workout.plan["bodyweightOnly"] as? Bool == true])
     }
 
 }

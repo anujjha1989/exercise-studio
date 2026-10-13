@@ -174,7 +174,7 @@ struct NativeExerciseDetail: View {
     var body: some View {
         NavigationStack {
             Form {
-                if exercise.custom == nil { Section { NativeDemo(store: store, exercise: exercise).listRowInsets(EdgeInsets()).frame(height: 330) } }
+                if exercise.custom == nil { Section { NativeDemo(store: store, exercise: exercise, bodyweightOnly: bodyweightOnly).listRowInsets(EdgeInsets()).frame(height: 330) } }
                 Section("Form") {
                     Text((exercise.muscles ?? [groupName(exercise.g)]).joined(separator: ", ")).font(.subheadline.bold())
                     ForEach(Array(exercise.steps.enumerated()), id: \.offset) { i, step in Text("\(i + 1). \(step)") }
@@ -194,17 +194,17 @@ struct NativeExerciseDetail: View {
                             Button("Stop timer") { seconds = max(1, Int(Date().timeIntervalSince(start))); runningHold = nil }
                         } else { Button("Start timer") { runningHold = Date() } }
                     } else { Stepper("Reps: \(reps)", value: $reps, in: 1...10000) }
-                    if exercise.eq != "bw" { HStack { Text(exercise.singleBell == true ? "Dumbbell (kg)" : "Each dumbbell (kg)"); TextField("0", value: $kg, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing) } }
+                    if exercise.eq != "bw" && !bodyweightOnly { HStack { Text(exercise.singleBell == true ? "Dumbbell (kg)" : "Each dumbbell (kg)"); TextField("0", value: $kg, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing) } }
                     if exercise.unilateral == true { Picker("Side", selection: $side) { Text("Left").tag("left"); Text("Right").tag("right") }.pickerStyle(.segmented) }
                     Button(editIndex == nil ? "Log set" : "Save edit") {
                         guard kg.isFinite, kg >= 0, kg <= 1000 else { store.message = "Enter a weight between 0 and 1000 kg."; return }
                         var set: [String: Any] = exercise.timed == 1 ? ["s": seconds] : ["r": reps]
-                        if kg > 0 { set["kg"] = kg }; if exercise.unilateral == true { set["side"] = side }
+                        if kg > 0 && !bodyweightOnly { set["kg"] = kg }; if exercise.unilateral == true { set["side"] = side }
                         let isNew = editIndex == nil; store.addSet(date, exercise, set, editIndex: editIndex); editIndex = nil; if isNew { onLog?() }; UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     }.font(.headline).tint(studioOrange).buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth:.infinity,minHeight:44)
                     if editIndex == nil, let last = lastSet {
                         Button("Repeat last set") {
-                            var repeated = last; if exercise.unilateral == true { repeated["side"] = side }
+                            var repeated = last; if bodyweightOnly { repeated.removeValue(forKey:"kg") }; if exercise.unilateral == true { repeated["side"] = side }
                             store.addSet(date, exercise, repeated); onLog?(); UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         }.font(.headline).frame(minHeight: 44)
                     }
@@ -223,13 +223,14 @@ struct NativeExerciseDetail: View {
             guard !seeded else { return }; seeded = true
             let target = store.rule("recommendation", ["id": exercise.id, "date": date]) as? [String: Any]
             reps = target?["reps"] as? Int ?? (store.rule("scheme") as? [String: Any])?["lo"] as? Int ?? 8
-            seconds = target?["seconds"] as? Int ?? 30; kg = target?["kg"] as? Double ?? 0
+            seconds = target?["seconds"] as? Int ?? 30; kg = bodyweightOnly ? 0 : target?["kg"] as? Double ?? 0
             if exercise.unilateral == true {
                 let sets = currentSets
                 side = sets.filter { $0["side"] as? String == "left" }.count > sets.filter { $0["side"] as? String == "right" }.count ? "right" : "left"
             }
         }
     }
+    private var bodyweightOnly: Bool { exercise.eq == "both" && (store.day(date)["plan"] as? [String:Any])?["bodyweightOnly"] as? Bool == true }
     private var currentSets: [[String: Any]] { (store.day(date)["entries"] as? [[String: Any]] ?? []).first { $0["ex"] as? String == exercise.id }?["sets"] as? [[String: Any]] ?? [] }
     private var lastSet: [String: Any]? { currentSets.last ?? (store.rule("recommendation", ["id": exercise.id, "date": date]) as? [String: Any])?["last"] as? [String: Any] }
 }

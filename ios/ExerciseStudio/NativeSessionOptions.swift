@@ -28,7 +28,7 @@ struct NativeSessionOptions: View {
                         if let ex = store.exercises.first(where: {$0.id == id}) {
                             let alternatives = (store.rule("substitutes", ["id":id,"used":(proposed["ids"] as? [String] ?? []).filter {$0 != (substitutions[id] ?? id)}]) as? [String] ?? []).filter { candidate in
                                 guard let e = store.exercises.first(where: {$0.id == candidate}) else { return false }
-                                return (!bodyweight || e.eq == "bw") && (!noChair || e.prop?.chairX == nil)
+                                return (!bodyweight || e.eq != "db") && (!noChair || e.prop?.chairX == nil)
                             }
                             Picker(ex.name, selection: Binding(get: {substitutions[id] ?? id}, set: {substitutions[id] = $0})) {
                                 Text(ex.name).tag(id)

@@ -10,7 +10,7 @@ final class EnhancementTests: XCTestCase {
         XCTAssertEqual(store.profile["minutes"] as? Int,45)
         for id in plan["ids"] as? [String] ?? [] {
             let ex=store.exercises.first {$0.id == id}!
-            XCTAssertEqual(ex.eq,"bw"); XCTAssertNil(ex.prop?.chairX)
+            XCTAssertNotEqual(ex.eq,"db"); XCTAssertNil(ex.prop?.chairX)
         }
         let frozen:[String:Any]=["name":"Frozen","ids":["curl"],"sets":2,"scheme":["lo":8,"hi":12,"rest":75],"unilateral":[]]
         store.saveDay(store.today,["plan":frozen,"entries":[["ex":"curl","sets":[["r":8,"kg":5]]]]])

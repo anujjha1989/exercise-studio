@@ -23,6 +23,7 @@
 		CC8288A50CCD96BDFD6A6CC1 /* TVLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = A720C0C4E4EC5573E21EE034 /* TVLink.swift */; };
 		D8748E597D529EC1E6E7D555 /* EnhancementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D38EF0AAE06CF0216B4B3D8 /* EnhancementTests.swift */; };
 		DD8C5DAEEB654FB7F265C98A /* NativeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12809FA6CB0DA0AF953AD3B8 /* NativeViews.swift */; };
+		E632C79493DFCB6FCB7D3F59 /* NativeTVPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64DF111B61178BC90537E64B /* NativeTVPreview.swift */; };
 		E9721EEDCBFA638BB52327BA /* ServerAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C60DDDA29CA30CB7CFC36C /* ServerAddress.swift */; };
 		EC48D7B1520FFBC057481FF2 /* NativeWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 573A178C6263F834FDC60EA2 /* NativeWorkout.swift */; };
 		FEA424CA8C2A670261AE7F05 /* NativeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0760127E9C9D378966F598 /* NativeStore.swift */; };
@@ -54,6 +55,7 @@
 		553E59E17589BD07F063AAA3 /* NativeMoreViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMoreViews.swift; sourceTree = "<group>"; };
 		573A178C6263F834FDC60EA2 /* NativeWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeWorkout.swift; sourceTree = "<group>"; };
 		589C2AB04825BF60BEF4674D /* ServerAddressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerAddressTests.swift; sourceTree = "<group>"; };
+		64DF111B61178BC90537E64B /* NativeTVPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeTVPreview.swift; sourceTree = "<group>"; };
 		6D38EF0AAE06CF0216B4B3D8 /* EnhancementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancementTests.swift; sourceTree = "<group>"; };
 		812FB690498CF5E0D783D4D3 /* ExerciseStudioUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ExerciseStudioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96C16751EF693D279E6F08C4 /* NativeRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRulesTests.swift; sourceTree = "<group>"; };
@@ -83,6 +85,7 @@
 				F0DD1F6B7C7761206BAF1208 /* NativeSessionOptions.swift */,
 				BE10217DC3FC0A663E30FA3D /* NativeSignIn.swift */,
 				BB0760127E9C9D378966F598 /* NativeStore.swift */,
+				64DF111B61178BC90537E64B /* NativeTVPreview.swift */,
 				12809FA6CB0DA0AF953AD3B8 /* NativeViews.swift */,
 				573A178C6263F834FDC60EA2 /* NativeWorkout.swift */,
 				B0DDC7E1AE48C48189BE9D88 /* PrivacyInfo.xcprivacy */,
@@ -267,6 +270,7 @@
 				A9C4856B04689C75F279150D /* NativeSessionOptions.swift in Sources */,
 				5EB68C21477D7AECDA32E338 /* NativeSignIn.swift in Sources */,
 				FEA424CA8C2A670261AE7F05 /* NativeStore.swift in Sources */,
+				E632C79493DFCB6FCB7D3F59 /* NativeTVPreview.swift in Sources */,
 				DD8C5DAEEB654FB7F265C98A /* NativeViews.swift in Sources */,
 				EC48D7B1520FFBC057481FF2 /* NativeWorkout.swift in Sources */,
 				E9721EEDCBFA638BB52327BA /* ServerAddress.swift in Sources */,
