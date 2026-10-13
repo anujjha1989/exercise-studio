@@ -30,7 +30,7 @@ struct TVWorkoutView: View {
                                 else if link.snapshot["paused"] as? Bool == true { Text("Workout paused").foregroundStyle(.orange) }
                                 else if let rest=link.snapshot["rest"] as? Int,rest>0 { Text("Rest · \(rest) sec").font(.title.monospacedDigit()) }
                                 ScrollView { VStack(alignment:.leading,spacing:16) { ForEach(Array(ex.steps.enumerated()),id:\.offset) { i,step in Text("\(i+1). \(step)").font(.body) } } }.frame(maxHeight:350).focusable()
-                                Text("Log sets and control the session on your iPhone.").font(.caption).foregroundStyle(.secondary)
+                                Text(link.snapshot["preview"] as? Bool == true ? "Control this preview on your iPhone." : "Log sets and control the session on your iPhone.").font(.caption).foregroundStyle(.secondary)
                             }.frame(maxWidth:600)
                         }
                     }
@@ -47,7 +47,7 @@ struct TVWorkoutView: View {
                     Image(systemName:"appletv").font(.system(size:70)).foregroundStyle(.orange)
                     Text("Exercise Studio").font(.largeTitle.bold())
                     Text(link.status).foregroundStyle(.secondary)
-                    Text("Start a workout on your iPhone, choose Show workout on Apple TV, then enter its code here.").multilineTextAlignment(.center).frame(maxWidth:900)
+                    Text("On your iPhone, open Setup → Connect Apple TV, or start a workout and choose Show workout on Apple TV. Enter its code here.").multilineTextAlignment(.center).frame(maxWidth:900)
                     ForEach(Array(link.devices.enumerated()),id:\.offset) { _,device in
                         Button("Connect to iPhone") { endpoint=device.endpoint }.buttonStyle(.borderedProminent)
                     }

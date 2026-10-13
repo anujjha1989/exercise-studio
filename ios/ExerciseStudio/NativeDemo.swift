@@ -12,7 +12,7 @@ final class NativeFigure: ObservableObject {
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 8))
         return renderer.image { ctx in
             UIColor.white.setFill(); ctx.fill(CGRect(x:0,y:0,width:128,height:8))
-            for x in stride(from:0,to:128,by:3) { UIColor(white:0.78,alpha:1).setFill(); ctx.fill(CGRect(x:x,y:0,width:1,height:8)) }
+            for x in stride(from:0,to:128,by:3) { UIColor(white:0.96,alpha:1).setFill(); ctx.fill(CGRect(x:x,y:0,width:1,height:8)) }
         }
     }()
     private var nodes: [String: SCNNode] = [:]
@@ -20,15 +20,15 @@ final class NativeFigure: ObservableObject {
         scene.background.contents = UIColor.white
         camera.camera = SCNCamera(); camera.camera?.usesOrthographicProjection = true; camera.camera?.orthographicScale = 48; camera.camera?.zNear = 0.1; camera.camera?.zFar = 600
         scene.rootNode.addChildNode(camera)
-        let ambient = SCNNode(); ambient.light = SCNLight(); ambient.light?.type = .ambient; ambient.light?.intensity = 650; scene.rootNode.addChildNode(ambient)
-        let light = SCNNode(); light.light = SCNLight(); light.light?.type = .omni; light.light?.intensity = 1300; light.position = SCNVector3(-70, 130, 90); scene.rootNode.addChildNode(light)
+        let ambient = SCNNode(); ambient.light = SCNLight(); ambient.light?.type = .ambient; ambient.light?.intensity = 350; scene.rootNode.addChildNode(ambient)
+        let light = SCNNode(); light.light = SCNLight(); light.light?.type = .omni; light.light?.intensity = 1000; light.position = SCNVector3(-70, 130, 90); scene.rootNode.addChildNode(light)
         let floor = SCNNode(geometry: SCNFloor()); floor.geometry?.firstMaterial?.diffuse.contents = UIColor(white: 0.97, alpha: 1); floor.geometry?.firstMaterial?.roughness.contents = 1; floor.position.y = -2; scene.rootNode.addChildNode(floor)
     }
     func update(store: NativeStore, exercise: Exercise, time: Double, highlights: Bool, view: Int, showPath: Bool = false, bodyweightOnly: Bool = false) {
         guard let skeleton = store.skeleton(exercise.id,time:time), let neck = skeleton["neck"] as? [Double], let hip = skeleton["hip"] as? [Double], let arms = skeleton["arms"] as? [[[Double]]], let legs = skeleton["legs"] as? [[[Double]]] else { return }
         for node in nodes.values { node.isHidden = true }
         let n = vector(neck), h = vector(hip), up = simd_normalize(n-h), front = simd_normalize(simd_cross(SIMD3<Float>(1,0,0), up)), orientation = simd_quatf(from: SIMD3<Float>(0,1,0), to: up)
-        let gray = UIColor(white: 0.78, alpha: 1), red = UIColor(red: 0.94, green: 0.29, blue: 0.2, alpha: 1), assisting = UIColor(red: 0.94,green:0.69,blue:0.63,alpha:1)
+        let gray = UIColor(white: 0.62, alpha: 1), red = UIColor(red: 0.94, green: 0.29, blue: 0.2, alpha: 1), assisting = UIColor(red: 0.94,green:0.69,blue:0.63,alpha:1)
         let groups: [String:[String]] = ["chest":["chest"],"back":["back"],"shoulders":["shoulders"],"arms":[exercise.mv == "pull" ? "biceps":"triceps"],"core":["abs"],"legs":["quads","glutes"]]
         var primary = Set(groups[exercise.g] ?? [])
         if ["deadlift","singlerdl"].contains(exercise.id) { primary = ["hamstrings","glutes"] }
@@ -123,7 +123,7 @@ final class NativeFigure: ObservableObject {
     private func ell(_ key: String, position: SIMD3<Float>, size: SIMD3<Float>, color: UIColor, rotation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0,1,0))) {
         let node: SCNNode
         if let existing = nodes[key] { node = existing } else {
-            let sphere = SCNSphere(radius: 1); sphere.segmentCount = 24; sphere.firstMaterial?.lightingModel = .blinn; sphere.firstMaterial?.specular.contents = UIColor(white:0.22,alpha:1); sphere.firstMaterial?.shininess = 0.25; sphere.firstMaterial?.multiply.contents = muscleTexture
+            let sphere = SCNSphere(radius: 1); sphere.segmentCount = 24; sphere.firstMaterial?.lightingModel = .blinn; sphere.firstMaterial?.specular.contents = UIColor(white:0.12,alpha:1); sphere.firstMaterial?.shininess = 0.12; sphere.firstMaterial?.multiply.contents = muscleTexture
             node = SCNNode(geometry:key == "body" ? torsoGeometry() : sphere); nodes[key] = node; scene.rootNode.addChildNode(node)
         }
         node.isHidden = false; node.simdPosition = position; node.simdScale = size; node.simdOrientation = rotation; node.geometry?.firstMaterial?.diffuse.contents = color
@@ -143,7 +143,7 @@ final class NativeFigure: ObservableObject {
             indices.append(contentsOf:[a,c,b,b,c,d])
         } }
         let geometry=SCNGeometry(sources:[SCNGeometrySource(vertices:vertices),SCNGeometrySource(normals:normals)],elements:[SCNGeometryElement(indices:indices,primitiveType:.triangles)])
-        geometry.firstMaterial=SCNMaterial();geometry.firstMaterial?.lightingModel = .blinn;geometry.firstMaterial?.shininess=0.25; geometry.firstMaterial?.specular.contents=UIColor(white:0.22,alpha:1)
+        geometry.firstMaterial=SCNMaterial();geometry.firstMaterial?.lightingModel = .blinn;geometry.firstMaterial?.shininess=0.12; geometry.firstMaterial?.specular.contents=UIColor(white:0.12,alpha:1)
         return geometry
     }
     private func bone(_ key: String, _ a: SIMD3<Float>, _ b: SIMD3<Float>, width: Float, color: UIColor) {
