@@ -73,6 +73,9 @@ struct NativePlayerView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    if store.pendingCount > 0 {
+                        Text(store.needsSignIn ? "Sign in after your workout to sync saved edits." : store.conflicts.isEmpty ? "\(store.pendingCount) records waiting to sync" : "A save conflict needs review after your workout.").font(.caption).foregroundStyle(.secondary)
+                    }
                     Text(workout.date).font(.caption).foregroundStyle(.secondary)
                     TimelineView(.periodic(from: .now, by: 1)) { _ in Text("\(workout.elapsed / 60):\(String(format: "%02d", workout.elapsed % 60)) elapsed").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary) }
                     if workout.ids.indices.contains(workout.index), let exercise = store.exercises.first(where: { $0.id == workout.ids[workout.index] }) {
@@ -103,7 +106,8 @@ struct NativePlayerView: View {
             } message: { Text("Recorded sets are kept. Completion requires all planned sets, including both sides.") }
             .onReceive(tick) { _ in workout.checkRest(); publishTV() }
             .onChange(of: phase) { _, value in if value != .active && !workout.paused { workout.togglePause(); publishTV() } }
-            .onDisappear { tv.stop() }
+            .onAppear { store.workoutActive = true }
+            .onDisappear { tv.stop(); store.workoutActive = false }
             .sheet(isPresented: $logging) {
                 if workout.ids.indices.contains(workout.index), let exercise = store.exercises.first(where: { $0.id == workout.ids[workout.index] }) {
                     NativeExerciseDetail(store: store, exercise: exercise, date: workout.date, onLog: { logging = false; workout.didLog() })

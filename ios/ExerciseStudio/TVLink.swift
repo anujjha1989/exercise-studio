@@ -2,7 +2,9 @@ import Foundation
 import Network
 import CryptoKit
 import Combine
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Local, encrypted, read-only workout display. No photos, profile or server credentials leave the phone.
 @MainActor
@@ -24,14 +26,23 @@ final class TVLink: ObservableObject {
     private var sendSequence = 0
     private var receiveSequence = -1
     private var latest: [String:Any] = [:]
-    func host() {
+    private var deviceName: String {
+        #if canImport(UIKit)
+        UIDevice.current.name
+        #else
+        "Exercise Studio Test"
+        #endif
+    }
+    func host(advertise: Bool = true, loopbackOnly: Bool = false) {
         stop()
         let alphabet = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
         code = String((0..<12).map { _ in alphabet.randomElement()! })
         key = makeKey(code); failures = 0
         do {
-            let listener = try NWListener(using:.tcp)
-            listener.service = NWListener.Service(name:UIDevice.current.name + " · Exercise Studio",type:"_exercisestudio._tcp")
+            let parameters = NWParameters.tcp
+            if loopbackOnly { parameters.requiredLocalEndpoint = .hostPort(host:"127.0.0.1",port:.any) }
+            let listener = try NWListener(using:parameters)
+            if advertise { listener.service = NWListener.Service(name:deviceName + " · Exercise Studio",type:"_exercisestudio._tcp") }
             let token = generation
             listener.newConnectionHandler = { [weak self] connection in Task { @MainActor in
                 guard let self, self.generation == token, self.connections.count < 1 else { connection.cancel(); return }

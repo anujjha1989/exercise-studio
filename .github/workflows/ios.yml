@@ -25,6 +25,10 @@ jobs:
           xcrun actool tvos/Assets.xcassets --compile /tmp/exercise-tv-assets --platform appletvos --minimum-deployment-target 17.0 --target-device tv --app-icon 'Brand Assets' --output-partial-info-plist /tmp/exercise-tv-info.plist > /tmp/exercise-tv-result.plist
           python3 -c 'import plistlib; result=plistlib.load(open("/tmp/exercise-tv-result.plist", "rb")); assert not result.get("com.apple.actool.document.errors"), result'
       - run: xcodebuild -project tvos/ExerciseStudioTV.xcodeproj -scheme ExerciseStudioTV -sdk appletvsimulator CODE_SIGNING_ALLOWED=NO build
+      - name: Encrypted TV transport regression
+        run: |
+          xcrun swiftc -parse-as-library ios/ExerciseStudio/TVLink.swift scripts/verify-tv-link.swift -o /tmp/exercise-tv-link-check
+          /tmp/exercise-tv-link-check
       - name: Native unit and UI regression tests
         run: |
           destination=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for devices in d["devices"].values() for x in devices if x["name"].startswith("iPhone")))')

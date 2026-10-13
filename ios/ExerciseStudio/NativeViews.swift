@@ -33,7 +33,7 @@ struct NativeRootView: View {
             NativeSetup(store: store).tabItem { Label("Setup", systemImage: "slider.horizontal.3") }
         }
         .tint(studioOrange)
-        .sheet(isPresented: $store.needsSignIn) { NativeSignIn(store: store).ignoresSafeArea(edges: .bottom) }
+        .sheet(isPresented: Binding(get: { store.needsSignIn && !store.workoutActive }, set: { value in if !value && !store.workoutActive && store.needsSignIn { store.useOffline() } })) { NativeSignIn(store: store).ignoresSafeArea(edges: .bottom) }
         .sheet(item: $store.file) { FileShareView(url: $0.url) }
         .task { if !offlineUITest { store.startReconnection(); await store.connect() } }
         .onAppear { UIApplication.shared.isIdleTimerDisabled = keepAwake && phase == .active }

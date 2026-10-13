@@ -6,7 +6,7 @@ import Network
 final class TVLinkTests: XCTestCase {
     func testEncryptedLocalSessionAndDisconnect() async throws {
         let phone=TVLink(),tv=TVLink(); defer { phone.stop(); tv.stop() }
-        phone.host()
+        phone.host(advertise:false,loopbackOnly:true)
         for _ in 0..<100 { if phone.port != nil { break }; try await Task.sleep(for:.milliseconds(20)) }
         let port=try XCTUnwrap(phone.port)
         XCTAssertEqual(phone.code.count,12)
@@ -23,7 +23,7 @@ final class TVLinkTests: XCTestCase {
     }
     func testWrongPairingCodeCannotReadWorkout() async throws {
         let phone=TVLink(),tv=TVLink(); defer {phone.stop();tv.stop()}
-        phone.host()
+        phone.host(advertise:false,loopbackOnly:true)
         for _ in 0..<100 { if phone.port != nil { break }; try await Task.sleep(for:.milliseconds(20)) }
         let port=try XCTUnwrap(phone.port); phone.publish(["exercise":"curl"])
         tv.join(.hostPort(host:"127.0.0.1",port:port),code:"AAAAAAAAAAAA")
