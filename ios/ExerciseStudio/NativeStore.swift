@@ -31,6 +31,7 @@ final class NativeStore: ObservableObject {
     @Published var days: [String: Any] = [:]
     @Published var needsSignIn = false
     @Published var workoutActive = false
+    @Published var tvPreviewActive = false
     @Published var message: String?
     @Published var conflicts: [String: [String: Any]] = [:]
     @Published var file: NativeFile?

@@ -33,16 +33,17 @@ struct NativeRootView: View {
             NativeSetup(store: store).tabItem { Label("Setup", systemImage: "slider.horizontal.3") }
         }
         .tint(studioOrange)
-        .sheet(isPresented: Binding(get: { store.needsSignIn && !store.workoutActive }, set: { value in if !value && !store.workoutActive && store.needsSignIn { store.useOffline() } })) { NativeSignIn(store: store).ignoresSafeArea(edges: .bottom) }
+        .sheet(isPresented: Binding(get: { store.needsSignIn && !store.workoutActive && !store.tvPreviewActive }, set: { value in if !value && !store.workoutActive && !store.tvPreviewActive && store.needsSignIn { store.useOffline() } })) { NativeSignIn(store: store).ignoresSafeArea(edges: .bottom) }
         .sheet(item: $store.file) { FileShareView(url: $0.url) }
         .task { if !offlineUITest { store.startReconnection(); await store.connect() } }
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = keepAwake && phase == .active }
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = (keepAwake || store.tvPreviewActive) && phase == .active }
         .onChange(of: phase) { _, value in
-            UIApplication.shared.isIdleTimerDisabled = keepAwake && value == .active
+            UIApplication.shared.isIdleTimerDisabled = (keepAwake || store.tvPreviewActive) && value == .active
             if value == .active && !offlineUITest { store.startReconnection(); Task { await store.connect() } }
             if value != .active { store.stopReconnection() }
         }
-        .onChange(of: keepAwake) { _, value in UIApplication.shared.isIdleTimerDisabled = value && phase == .active }
+        .onChange(of: store.tvPreviewActive) { _, value in UIApplication.shared.isIdleTimerDisabled = (keepAwake || value) && phase == .active }
+        .onChange(of: keepAwake) { _, value in UIApplication.shared.isIdleTimerDisabled = (value || store.tvPreviewActive) && phase == .active }
     }
 }
 

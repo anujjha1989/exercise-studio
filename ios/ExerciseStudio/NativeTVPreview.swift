@@ -26,9 +26,9 @@ struct NativeTVPreview: View {
                 }
             }.navigationTitle("Apple TV preview").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement:.confirmationAction) { Button("Done") { dismiss() } } }
-        }.onAppear { link.host();publish() }
+        }.onAppear { store.tvPreviewActive=true;link.host();publish() }
         .onReceive(tick) { _ in publish() }
-        .onDisappear { link.stop() }
+        .onDisappear { link.stop();store.tvPreviewActive=false }
     }
     private func publish() {
         link.publish(["exercise":exerciseID,"index":0,"total":1,"sets":0,"target":0,"paused":paused,"rest":0,"elapsed":0,"preview":true])
