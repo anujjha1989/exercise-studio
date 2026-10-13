@@ -169,9 +169,11 @@ function lastSets(id,before){
   return null;
 }
 function suggest(e,date){
+  const bodyweightOnly=e.eq==="both"&&S.days[date]?.plan?.bodyweightOnly;
   const sc=P?playerScheme():S.days[date]?.plan?.scheme||scheme();
   const target=Workout.recommendation(S.days,e.id,date,sc,S.profile.dbs,!!e.unilateral);
   const lastTxt=target?"Last time ("+short(target.date)+"): "+setTxt(target.last):"";
+  if(bodyweightOnly)return {r:target?.reps||sc.lo,kg:null,lastTxt,note:"Bodyweight only for this session. Keep each repetition controlled."};
   if(e.timed)return {s:target?.seconds||sc.hold,lastTxt,note:"Use a controlled hold; stop when you cannot keep the starting position."};
   if(!target)return {r:sc.lo,kg:null,lastTxt,note:"Aim for "+sc.lo+" to "+sc.hi+" comfortable reps with good form."};
   return {r:target.reps,kg:target.kg||null,lastTxt,note:target.ready?"Two sessions at the top of your range. Try "+target.kg+" kg if your form stays comfortable.":"Keep your last weight and work within "+sc.lo+"–"+sc.hi+" reps."};
@@ -208,7 +210,7 @@ function logForm(e,date){
   const prev=UI.editing?S.days[date].entries[UI.editing.i].sets[UI.editing.k]:mine[mine.length-1];
   const side=e.unilateral?`<label class="f">Side<select id="l-side"><option value="left" ${prev&&prev.side==="left"?"selected":""}>Left</option><option value="right" ${prev&&prev.side==="right"?"selected":""}>Right</option></select></label>`:"";
   if(e.timed)return `<div class="steps">${stepper("l-secs",prev?prev.s:sg.s,5,"Seconds")}${side}<label class="f">Timer<button type="button" class="btn line" style="height:56px" data-act="hold" id="holdbtn">Start timer</button></label></div>`;
-  return `<div class="steps">${stepper("l-reps",prev?prev.r:sg.r,1,"Reps")}${side}${e.eq==="bw"?"":stepper("l-kg",prev?(prev.kg||""):(sg.kg||""),"kg",e.id==="goblet"||e.id==="sumo"||e.id==="pullover"||e.id==="triext"||e.id==="swing"||e.id==="twist"?"Dumbbell (kg)":"Each dumbbell (kg)")}</div>`;
+  return `<div class="steps">${stepper("l-reps",prev?prev.r:sg.r,1,"Reps")}${side}${e.eq==="bw"||e.eq==="both"&&today?.plan?.bodyweightOnly?"":stepper("l-kg",prev?(prev.kg||""):(sg.kg||""),"kg",e.id==="goblet"||e.id==="sumo"||e.id==="pullover"||e.id==="triext"||e.id==="swing"||e.id==="twist"?"Dumbbell (kg)":"Each dumbbell (kg)")}</div>`;
 }
 function setsHtml(e,date){
   const d=S.days[date],out=[];
