@@ -181,7 +181,7 @@ struct NativeExerciseDetail: View {
                     if !exercise.tip.isEmpty { Text(exercise.tip).foregroundStyle(.secondary) }
                 }
                 Section("Your target") {
-                    if let target = store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": (store.day(date)["plan"] as? [String: Any])?["scheme"] ?? store.rule("scheme") ?? [:]]) as? [String: Any] {
+                    if let target = store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": targetScheme]) as? [String: Any] {
                         Text("Last session · " + (target["date"] as? String ?? "") + " · " + setLabel(target["last"] as? [String: Any] ?? [:])).font(.subheadline)
                         if target["ready"] as? Bool == true { Text("You reached the top of your range in two sessions. Try the next available weight if your form stays comfortable.").font(.caption).foregroundStyle(.secondary) }
                     } else { Text("Start comfortably and use the form guidance above.").font(.subheadline).foregroundStyle(.secondary) }
@@ -221,18 +221,19 @@ struct NativeExerciseDetail: View {
             }.navigationTitle(exercise.name).navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }.onAppear {
             guard !seeded else { return }; seeded = true
-            let target = store.rule("recommendation", ["id": exercise.id, "date": date]) as? [String: Any]
-            reps = target?["reps"] as? Int ?? (store.rule("scheme") as? [String: Any])?["lo"] as? Int ?? 8
-            seconds = target?["seconds"] as? Int ?? 30; kg = bodyweightOnly ? 0 : target?["kg"] as? Double ?? 0
+            let target = store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": targetScheme]) as? [String: Any]
+            reps = target?["reps"] as? Int ?? targetScheme["lo"] as? Int ?? 8
+            seconds = target?["seconds"] as? Int ?? targetScheme["hold"] as? Int ?? 30; kg = bodyweightOnly ? 0 : target?["kg"] as? Double ?? 0
             if exercise.unilateral == true {
                 let sets = currentSets
                 side = sets.filter { $0["side"] as? String == "left" }.count > sets.filter { $0["side"] as? String == "right" }.count ? "right" : "left"
             }
         }
     }
+    private var targetScheme: [String:Any] { (store.day(date)["plan"] as? [String:Any])?["scheme"] as? [String:Any] ?? store.rule("scheme") as? [String:Any] ?? [:] }
     private var bodyweightOnly: Bool { exercise.eq == "both" && (store.day(date)["plan"] as? [String:Any])?["bodyweightOnly"] as? Bool == true }
     private var currentSets: [[String: Any]] { (store.day(date)["entries"] as? [[String: Any]] ?? []).first { $0["ex"] as? String == exercise.id }?["sets"] as? [[String: Any]] ?? [] }
-    private var lastSet: [String: Any]? { currentSets.last ?? (store.rule("recommendation", ["id": exercise.id, "date": date]) as? [String: Any])?["last"] as? [String: Any] }
+    private var lastSet: [String: Any]? { currentSets.last ?? (store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": targetScheme]) as? [String: Any])?["last"] as? [String: Any] }
 }
 struct NativeHistory: View {
     @ObservedObject var store: NativeStore

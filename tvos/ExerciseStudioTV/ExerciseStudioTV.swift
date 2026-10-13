@@ -57,7 +57,7 @@ struct TVWorkoutView: View {
                     }
                     Button("Browse exercise library") { library=true }
                 }
-            }.padding(40).background(Color(red:0.04,green:0.07,blue:0.18))
+            }.padding(40).frame(maxWidth:.infinity,maxHeight:.infinity).background(Color(red:0.04,green:0.07,blue:0.18))
         }.tint(.orange).task { link.browse() }
         .onDisappear { link.stop() }
     }
