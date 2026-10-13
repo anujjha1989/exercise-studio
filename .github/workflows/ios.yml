@@ -1,9 +1,13 @@
 name: iOS build
 on:
   push:
+    branches: [main]
     paths: ['tvos/**', 'ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
   pull_request:
     paths: ['tvos/**', 'ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
+concurrency:
+  group: exercise-native-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: macos-latest

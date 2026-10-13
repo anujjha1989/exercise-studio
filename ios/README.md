@@ -33,3 +33,5 @@ Today's session can use a shorter time budget or temporary equipment restriction
 Queued resource count is shown only while edits are pending. Foreground network monitoring and a 20-second pending-edit retry reconnect without requiring another edit. Existing If-Match conflict handling stays in place. Inactive app scenes stop retry monitoring; active workouts pause when leaving the app.
 
 Apple TV display is an optional local connection; see `tvos/README.md`. No Pi API or security configuration change is required. The source-owned TV app shares the renderer and bundled rules, while the phone remains the only workout logging interface.
+
+Setup → Connect Apple TV offers a read-only pairing preview without creating any workout record. Temporary bodyweight sessions also hide optional dumbbells in demonstrations and keep their logging weight at zero; exercises that support either equipment remain eligible.

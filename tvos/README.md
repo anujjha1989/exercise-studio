@@ -8,6 +8,8 @@ Run `node scripts/stage-ios.js`, then `xcodegen generate --spec ios/project.yml`
 
 ## Pair and exercise
 
+To check pairing without logging, use **Setup → Connect Apple TV** on your iPhone.
+
 On the same local network, start a workout on the iPhone and tap **Show workout on Apple TV**. Enter its temporary 12-character code in the TV app. Allow Local Network access on each device when prompted. Live exercise, paired set progress, pause and rest status update once a second. Use the phone to log, skip rest, change exercise, pause and end. TV demos stop when the phone pauses or updates stop for eight seconds. Ending/disconnecting clears the session; codes change each time TV mode starts.
 
 The connection is direct Bonjour/TCP with AES-GCM authenticated encryption using a temporary random 60-bit pairing secret. Pairing attempts time out after ten seconds and the host stops after five incorrect codes. One TV can connect at a time. An intercepted code grants access to this session display until disconnected, so keep it private. This is local-network mode, not an Internet or Tailscale relay.
