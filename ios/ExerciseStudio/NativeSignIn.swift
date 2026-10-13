@@ -6,7 +6,7 @@ struct NativeSignIn: View {
     var body: some View {
         NavigationStack {
             SignInPage(store: store).navigationTitle("Sign in to your Pi").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Use offline") { store.needsSignIn = false } } }
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Use offline") { store.useOffline() } } }
         }
     }
 }
@@ -22,7 +22,7 @@ struct SignInPage: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate {
         let store: NativeStore
         init(_ store: NativeStore) { self.store = store }
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { Task { await store.connect() } }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { Task { await store.connect(manual:true) } }
         func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             decisionHandler(action.request.url.map { ServerAddress.sameOrigin($0, store.address) } == true ? .allow : .cancel)
         }

@@ -3,3 +3,5 @@ node_modules/
 .DS_Store
 ios/**/xcuserdata/
 ios/**/DerivedData/
+
+tvos/**/xcuserdata/

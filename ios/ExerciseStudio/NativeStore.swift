@@ -1,7 +1,10 @@
 import SwiftUI
 import JavaScriptCore
+#if os(iOS)
 import WebKit
+#endif
 import CryptoKit
+import Network
 
 struct ExerciseProp: Decodable {
     let chairX: Double?; let wall: Double?
@@ -16,22 +19,33 @@ struct Exercise: Identifiable, Decodable {
     let id: String; let name: String; let g: String; let eq: String
     let steps: [String]; let tip: String
     var prop: ExerciseProp?
+    var mv: String?; var also: [String]?
     var muscles: [String]?; var unilateral: Bool?; var timed: Int?; var db: Int?; var singleBell: Bool?; var custom: Int?
 }
 struct NativeFile: Identifiable { let id = UUID(); let url: URL }
 
 @MainActor
 final class NativeStore: ObservableObject {
-    @Published var profile: [String: Any] = [:]
+    @Published var profile: [String: Any] = [:] { didSet { cachedExercises = nil } }
+    private var cachedExercises: [Exercise]?
     @Published var days: [String: Any] = [:]
     @Published var needsSignIn = false
+    @Published var workoutActive = false
+    @Published var tvPreviewActive = false
     @Published var message: String?
     @Published var conflicts: [String: [String: Any]] = [:]
     @Published var file: NativeFile?
     @Published var busy = false
     let engine = JSContext()!
     private var revisions: [String: Any] = ["profile": 0, "days": [String: Int]()]
-    private var dirty: Set<String> = []
+    @Published private(set) var dirty: Set<String> = []
+    @Published private(set) var syncing = false
+    private var connecting = false
+    private var authDeferred = false
+    func useOffline() { authDeferred = true; needsSignIn = false }
+    private var monitor: NWPathMonitor?
+    private var retryTask: Task<Void, Never>?
+    var pendingCount: Int { dirty.count }
     private var generations: [String: Int] = [:]
     private var flushing = false
     let network: URLSession
@@ -41,8 +55,9 @@ final class NativeStore: ObservableObject {
     var today: String { let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f.string(from: Date()) }
     var state: [String: Any] { ["profile": profile, "days": days] }
     var exercises: [Exercise] {
+        if let cachedExercises { return cachedExercises }
         guard let text = ruleText("library"), let data = text.data(using: .utf8) else { return [] }
-        return (try? JSONDecoder().decode([Exercise].self, from: data)) ?? []
+        let result = (try? JSONDecoder().decode([Exercise].self, from: data)) ?? []; cachedExercises = result; return result
     }
     init(cacheRoot: URL? = nil, network: URLSession? = nil, autoSync: Bool = true) {
         self.cacheRoot = cacheRoot; self.network = network ?? URLSession(configuration: .default); self.autoSync = autoSync
@@ -50,6 +65,29 @@ final class NativeStore: ObservableObject {
         engine.evaluateScript(source)
         profile = json(engine.objectForKeyedSubscript("NativeRules")?.forProperty("defaultProfile")?.call(withArguments: [])?.toString()) as? [String: Any] ?? [:]
         loadCache()
+    }
+    func startReconnection() {
+        guard monitor == nil, autoSync else { return }
+        let monitor = NWPathMonitor(); self.monitor = monitor
+        monitor.pathUpdateHandler = { [weak self] path in
+            if path.status == .satisfied { Task { @MainActor [weak self] in await self?.connect() } }
+        }
+        monitor.start(queue: DispatchQueue(label: "studio.connection"))
+        retryTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(20))
+                guard !Task.isCancelled, let self else { return }
+                if self.pendingCount > 0 && !self.needsSignIn { await self.connect() }
+            }
+        }
+    }
+    func stopReconnection() { monitor?.cancel(); monitor = nil; retryTask?.cancel(); retryTask = nil }
+
+    func timing(_ id:String) -> [String:Any] {
+        json(engine.objectForKeyedSubscript("NativeRules")?.forProperty("timing")?.call(withArguments:[id])?.toString()) as? [String:Any] ?? [:]
+    }
+    func skeleton(_ id:String, time:Double) -> [String:Any]? {
+        json(engine.objectForKeyedSubscript("NativeRules")?.forProperty("pose")?.call(withArguments:[id,time])?.toString()) as? [String:Any]
     }
     func ruleText(_ method: String, _ arguments: [String: Any] = [:]) -> String? {
         engine.objectForKeyedSubscript("NativeRules")?.forProperty("run")?.call(withArguments: [state, method, arguments.merging(["date": arguments["date"] ?? today], uniquingKeysWith: { old, _ in old })])?.toString()
@@ -96,22 +134,26 @@ final class NativeStore: ObservableObject {
         } catch { message = "Device storage could not save your edits. Keep this app open and export a backup." }
     }
     func copySignInCookies() async {
+        #if os(iOS)
         let cookies = await WKWebsiteDataStore.default().httpCookieStore.allCookies()
         for cookie in cookies {
             let domain = cookie.domain.trimmingCharacters(in: CharacterSet(charactersIn: ".")).lowercased(), host = address.host?.lowercased() ?? ""
             if host == domain || host.hasSuffix("." + domain) { HTTPCookieStorage.shared.setCookie(cookie) }
         }
+        #endif
     }
     func request(_ route: String, method: String = "GET", body: Data? = nil, contentType: String = "application/json", revision: Int? = nil) async throws -> (Data, HTTPURLResponse) {
         var r = URLRequest(url: URL(string: route, relativeTo: address)!.absoluteURL); r.cachePolicy = .reloadIgnoringLocalCacheData; r.httpMethod = method; r.httpBody = body
         r.setValue(contentType, forHTTPHeaderField: "Content-Type"); if let revision { r.setValue(String(revision), forHTTPHeaderField: "If-Match") }
         let (data, response) = try await network.data(for: r)
         guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
-        if http.statusCode == 401 || (route.hasPrefix("api/") && http.value(forHTTPHeaderField: "Content-Type")?.contains("text/html") == true) { needsSignIn = true; throw URLError(.userAuthenticationRequired) }
+        if http.statusCode == 401 || (route.hasPrefix("api/") && http.value(forHTTPHeaderField: "Content-Type")?.contains("text/html") == true) { if !authDeferred { needsSignIn = true }; throw URLError(.userAuthenticationRequired) }
         return (data, http)
     }
-    func connect() async {
-        busy = true; defer { busy = false }
+    func connect(manual: Bool = false) async {
+        if manual { authDeferred = false }
+        guard !authDeferred, !connecting else { return }; connecting = true
+        busy = true; defer { busy = false; connecting = false }
         await copySignInCookies()
         let generation = generations
         do {
@@ -126,7 +168,7 @@ final class NativeStore: ObservableObject {
         } catch { if !needsSignIn { message = "Offline. Your saved library and local records remain available; edits will wait for reconnection." } }
     }
     func flush() async {
-        guard !flushing, !needsSignIn else { return }; flushing = true; defer { flushing = false }
+        guard !flushing, !needsSignIn, !authDeferred else { return }; flushing = true; syncing = true; defer { flushing = false; syncing = false }
         while let key = dirty.sorted().first(where: { conflicts[$0] == nil }) {
             let gen = generations[key, default: 0], body: Any = key == "profile" ? profile : day(key)
             let revision = key == "profile" ? (revisions["profile"] as? Int ?? 0) : ((revisions["days"] as? [String: Int] ?? [:])[key] ?? 0)
@@ -167,7 +209,7 @@ final class NativeStore: ObservableObject {
         UserDefaults.standard.set(url.absoluteString, forKey: "serverAddress")
         profile = json(engine.objectForKeyedSubscript("NativeRules")?.forProperty("defaultProfile")?.call(withArguments: [])?.toString()) as? [String: Any] ?? [:]
         days = [:]; revisions = ["profile": 0, "days": [String: Int]()]; conflicts = [:]; generations = [:]
-        loadCache(); await connect()
+        loadCache(); await connect(manual:true)
     }
 
     func exportCSV() {

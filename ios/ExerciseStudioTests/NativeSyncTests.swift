@@ -50,3 +50,15 @@ final class NativeSyncTests: XCTestCase {
         NativeMockProtocol.handler = nil
     }
 }
+
+extension NativeSyncTests {
+    func testChoosingOfflineDefersAutomaticSignInUntilManualReconnect() async {
+        let directory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),s=store(directory)
+        var requests=0
+        NativeMockProtocol.handler={ _ in requests += 1;return (401,[:]) }
+        s.changeProfile("goal","lose");s.useOffline();await s.connect();await s.flush()
+        XCTAssertEqual(requests,0);XCTAssertFalse(s.needsSignIn);XCTAssertEqual(s.pendingCount,1)
+        await s.connect(manual:true);XCTAssertTrue(s.needsSignIn);XCTAssertEqual(requests,1)
+        NativeMockProtocol.handler=nil
+    }
+}

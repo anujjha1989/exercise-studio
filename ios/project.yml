@@ -14,6 +14,10 @@ targets:
     type: application
     platform: iOS
     sources: [ExerciseStudio]
+    info:
+      path: ExerciseStudio/Info.plist
+      properties:
+        NSBonjourServices: ['_exercisestudio._tcp']
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.anujjha.exercise-studio
@@ -24,8 +28,9 @@ targets:
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Select progress photos for your workout log.
         INFOPLIST_KEY_NSCameraUsageDescription: Take progress photos for your workout log.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: '1.0'
-        CURRENT_PROJECT_VERSION: '1'
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: Display your workout on an Apple TV on your local network.
+        MARKETING_VERSION: '1.1'
+        CURRENT_PROJECT_VERSION: '2'
   ExerciseStudioTests:
     type: bundle.unit-test
     platform: iOS

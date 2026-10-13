@@ -12,17 +12,18 @@ func setLabel(_ set: [String: Any]) -> String {
     return (seconds > 0 ? "\(seconds) sec" : "\(reps) reps" + (kg > 0 ? " · \(kg.formatted()) kg" : "")) + ((set["side"] as? String).map { " · " + $0.capitalized } ?? "")
 }
 
+var studioTesting: Bool {
+    #if DEBUG
+    return ProcessInfo.processInfo.arguments.contains("-nativeUITestOffline") || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil || NSClassFromString("XCTestCase") != nil
+    #else
+    return false
+    #endif
+}
 struct NativeRootView: View {
-    @StateObject private var store = NativeStore()
+    @StateObject private var store = NativeStore(autoSync: !studioTesting)
     @Environment(\.scenePhase) private var phase
     @AppStorage("keepScreenAwake") private var keepAwake = false
-    private var offlineUITest: Bool {
-        #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-nativeUITestOffline")
-        #else
-        false
-        #endif
-    }
+    private var offlineUITest: Bool { studioTesting }
     var body: some View {
         TabView {
             NativeToday(store: store).tabItem { Label("Today", systemImage: "house") }
@@ -32,15 +33,17 @@ struct NativeRootView: View {
             NativeSetup(store: store).tabItem { Label("Setup", systemImage: "slider.horizontal.3") }
         }
         .tint(studioOrange)
-        .sheet(isPresented: $store.needsSignIn) { NativeSignIn(store: store).ignoresSafeArea(edges: .bottom) }
+        .sheet(isPresented: Binding(get: { store.needsSignIn && !store.workoutActive && !store.tvPreviewActive }, set: { value in if !value && !store.workoutActive && !store.tvPreviewActive && store.needsSignIn { store.useOffline() } })) { NativeSignIn(store: store).ignoresSafeArea(edges: .bottom) }
         .sheet(item: $store.file) { FileShareView(url: $0.url) }
-        .task { if !offlineUITest { await store.connect() } }
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = keepAwake && phase == .active }
+        .task { if !offlineUITest { store.startReconnection(); await store.connect() } }
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = (keepAwake || store.tvPreviewActive) && phase == .active }
         .onChange(of: phase) { _, value in
-            UIApplication.shared.isIdleTimerDisabled = keepAwake && value == .active
-            if value == .active && !offlineUITest { Task { await store.connect() } }
+            UIApplication.shared.isIdleTimerDisabled = (keepAwake || store.tvPreviewActive) && value == .active
+            if value == .active && !offlineUITest { store.startReconnection(); Task { await store.connect() } }
+            if value != .active { store.stopReconnection() }
         }
-        .onChange(of: keepAwake) { _, value in UIApplication.shared.isIdleTimerDisabled = value && phase == .active }
+        .onChange(of: store.tvPreviewActive) { _, value in UIApplication.shared.isIdleTimerDisabled = (keepAwake || value) && phase == .active }
+        .onChange(of: keepAwake) { _, value in UIApplication.shared.isIdleTimerDisabled = (value || store.tvPreviewActive) && phase == .active }
     }
 }
 
@@ -58,8 +61,11 @@ struct NativeShell<Content: View>: View {
                 .toolbarBackground(studioPaper, for: .tabBar)
                 .toolbarBackground(.visible, for: .tabBar)
                 .safeAreaInset(edge: .top, spacing: 0) {
+                    if store.pendingCount > 0 && store.message == nil && store.conflicts.isEmpty {
+                        HStack(spacing: 8) { Image(systemName: store.syncing ? "arrow.triangle.2.circlepath" : "icloud.and.arrow.up"); Text(store.syncing ? "Syncing edits…" : "Waiting to sync · \(store.pendingCount) records"); Spacer() }.font(.caption).padding(12).background(.regularMaterial)
+                    }
                     if let message = store.message {
-                        HStack { Text(message).font(.caption); Spacer(); Button("Retry") { Task { await store.connect() } } }.padding(12).background(.regularMaterial)
+                        HStack { Text(message).font(.caption); Spacer(); Button("Retry") { Task { await store.connect(manual:true) } } }.padding(12).background(.regularMaterial)
                     }
                     if !store.conflicts.isEmpty {
                         ForEach(store.conflicts.keys.sorted(), id: \.self) { key in NativeConflict(store: store, key: key) }
@@ -92,6 +98,7 @@ struct NativeToday: View {
     @ObservedObject var store: NativeStore
     @State private var selected: Exercise?
     @State private var player: NativeWorkout?
+    @State private var adjust = false
     var body: some View {
         let plan = store.plan()
         NativeShell(store: store, title: "Exercise Studio") {
@@ -101,8 +108,10 @@ struct NativeToday: View {
                     if let plan {
                         Text(plan["name"] as? String ?? "Today's workout").font(.largeTitle.bold())
                         Text("\(plan["sets"] as? Int ?? 2) sets per exercise · \((plan["scheme"] as? [String: Any])?["lo"] as? Int ?? 8)–\((plan["scheme"] as? [String: Any])?["hi"] as? Int ?? 12) reps").foregroundStyle(.secondary)
-                        Button("Start workout") { player = NativeWorkout(store: store, plan: plan) }.buttonStyle(.borderedProminent).controlSize(.large)
-                        if store.days[store.today] != nil { Text(store.status(store.today).capitalized).font(.headline).foregroundStyle(studioOrange) }
+                        Button(NativeWorkout.hasResume(store.address) ? "Resume workout" : "Start workout") { player = NativeWorkout(store: store, plan: plan) }.buttonStyle(.borderedProminent).controlSize(.large)
+                        Button("Adjust today's session", systemImage: "slider.horizontal.3") { adjust = true }
+                            .disabled(NativeWorkout.hasResume(store.address) || (store.day(store.today)["entries"] as? [[String: Any]] ?? []).contains { !($0["sets"] as? [[String: Any]] ?? []).isEmpty })
+                        if store.day(store.today)["started"] as? Bool == true || (store.day(store.today)["entries"] as? [[String:Any]] ?? []).contains(where: { !($0["sets"] as? [[String:Any]] ?? []).isEmpty }) { Text(store.status(store.today).capitalized).font(.headline).foregroundStyle(studioOrange) }
                         ForEach(plan["ids"] as? [String] ?? [], id: \.self) { id in
                             if let exercise = store.exercises.first(where: { $0.id == id }) {
                                 Button { selected = exercise } label: {
@@ -118,12 +127,14 @@ struct NativeToday: View {
                     } else {
                         Text("Rest day").font(.largeTitle.bold())
                         Text("Let your muscles recover. Take a walk or browse the exercise library.").foregroundStyle(.secondary)
-                        Button("Train anyway") { if let p = store.rule("train") as? [String: Any] { player = NativeWorkout(store: store, plan: p) } }.buttonStyle(.borderedProminent)
+                        Button("Adjust a session", systemImage:"slider.horizontal.3") { adjust = true }
+                        Button(NativeWorkout.hasResume(store.address) ? "Resume workout" : "Train anyway") { if let p = store.rule("train") as? [String: Any] { player = NativeWorkout(store: store, plan: p) } }.buttonStyle(.borderedProminent)
                     }
                     Text("Warm up for 3 minutes with marching, arm circles and slow squats.").font(.footnote).foregroundStyle(.secondary)
                 }.padding()
-            }.refreshable { await store.connect() }
+            }.refreshable { await store.connect(manual:true) }
         }
+        .sheet(isPresented: $adjust) { NativeSessionOptions(store: store) }
         .sheet(item: $selected) { NativeExerciseDetail(store: store, exercise: $0, date: store.today) }
         .fullScreenCover(item: $player) { NativePlayerView(store: store, workout: $0) }
     }
@@ -160,14 +171,21 @@ struct NativeExerciseDetail: View {
     @State private var editIndex: Int?
     @State private var undo: [String: Any]?
     @State private var runningHold: Date?
+    @State private var seeded = false
     var body: some View {
         NavigationStack {
             Form {
-                if exercise.custom == nil { Section { NativeDemo(store: store, exercise: exercise).listRowInsets(EdgeInsets()).frame(height: 330) } }
+                if exercise.custom == nil { Section { NativeDemo(store: store, exercise: exercise, bodyweightOnly: bodyweightOnly).listRowInsets(EdgeInsets()).frame(height: 330) } }
                 Section("Form") {
                     Text((exercise.muscles ?? [groupName(exercise.g)]).joined(separator: ", ")).font(.subheadline.bold())
                     ForEach(Array(exercise.steps.enumerated()), id: \.offset) { i, step in Text("\(i + 1). \(step)") }
                     if !exercise.tip.isEmpty { Text(exercise.tip).foregroundStyle(.secondary) }
+                }
+                Section("Your target") {
+                    if let target = store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": targetScheme]) as? [String: Any] {
+                        Text("Last session · " + (target["date"] as? String ?? "") + " · " + setLabel(target["last"] as? [String: Any] ?? [:])).font(.subheadline)
+                        if target["ready"] as? Bool == true { Text("You reached the top of your range in two sessions. Try the next available weight if your form stays comfortable.").font(.caption).foregroundStyle(.secondary) }
+                    } else { Text("Start comfortably and use the form guidance above.").font(.subheadline).foregroundStyle(.secondary) }
                 }
                 Section(editIndex == nil ? "Log set" : "Edit set") {
                     if exercise.timed == 1 {
@@ -177,14 +195,20 @@ struct NativeExerciseDetail: View {
                             Button("Stop timer") { seconds = max(1, Int(Date().timeIntervalSince(start))); runningHold = nil }
                         } else { Button("Start timer") { runningHold = Date() } }
                     } else { Stepper("Reps: \(reps)", value: $reps, in: 1...10000) }
-                    if exercise.eq != "bw" { HStack { Text(exercise.singleBell == true ? "Dumbbell (kg)" : "Each dumbbell (kg)"); TextField("0", value: $kg, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing) } }
+                    if exercise.eq != "bw" && !bodyweightOnly { HStack { Text(exercise.singleBell == true ? "Dumbbell (kg)" : "Each dumbbell (kg)"); TextField("0", value: $kg, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing) } }
                     if exercise.unilateral == true { Picker("Side", selection: $side) { Text("Left").tag("left"); Text("Right").tag("right") }.pickerStyle(.segmented) }
                     Button(editIndex == nil ? "Log set" : "Save edit") {
                         guard kg.isFinite, kg >= 0, kg <= 1000 else { store.message = "Enter a weight between 0 and 1000 kg."; return }
                         var set: [String: Any] = exercise.timed == 1 ? ["s": seconds] : ["r": reps]
-                        if kg > 0 { set["kg"] = kg }; if exercise.unilateral == true { set["side"] = side }
-                        store.addSet(date, exercise, set, editIndex: editIndex); editIndex = nil; onLog?(); UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    }.font(.headline).tint(studioOrange)
+                        if kg > 0 && !bodyweightOnly { set["kg"] = kg }; if exercise.unilateral == true { set["side"] = side }
+                        let isNew = editIndex == nil; store.addSet(date, exercise, set, editIndex: editIndex); editIndex = nil; if isNew { onLog?() }; UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    }.font(.headline).tint(studioOrange).buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth:.infinity,minHeight:44)
+                    if editIndex == nil, let last = lastSet {
+                        Button("Repeat last set") {
+                            var repeated = last; if bodyweightOnly { repeated.removeValue(forKey:"kg") }; if exercise.unilateral == true { repeated["side"] = side }
+                            store.addSet(date, exercise, repeated); onLog?(); UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }.font(.headline).frame(minHeight: 44)
+                    }
                     if editIndex != nil { Button("Cancel edit") { editIndex = nil } }
                 }
                 Section("Recorded sets · \(date)") {
@@ -196,8 +220,21 @@ struct NativeExerciseDetail: View {
                     if let undo { Button("Undo removed set") { store.addSet(date, exercise, undo); self.undo = nil } }
                 }
             }.navigationTitle(exercise.name).navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }.onAppear {
+            guard !seeded else { return }; seeded = true
+            let target = store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": targetScheme]) as? [String: Any]
+            reps = target?["reps"] as? Int ?? targetScheme["lo"] as? Int ?? 8
+            seconds = target?["seconds"] as? Int ?? targetScheme["hold"] as? Int ?? 30; kg = bodyweightOnly ? 0 : target?["kg"] as? Double ?? 0
+            if exercise.unilateral == true {
+                let sets = currentSets
+                side = sets.filter { $0["side"] as? String == "left" }.count > sets.filter { $0["side"] as? String == "right" }.count ? "right" : "left"
+            }
         }
     }
+    private var targetScheme: [String:Any] { (store.day(date)["plan"] as? [String:Any])?["scheme"] as? [String:Any] ?? store.rule("scheme") as? [String:Any] ?? [:] }
+    private var bodyweightOnly: Bool { exercise.eq == "both" && (store.day(date)["plan"] as? [String:Any])?["bodyweightOnly"] as? Bool == true }
+    private var currentSets: [[String: Any]] { (store.day(date)["entries"] as? [[String: Any]] ?? []).first { $0["ex"] as? String == exercise.id }?["sets"] as? [[String: Any]] ?? [] }
+    private var lastSet: [String: Any]? { currentSets.last ?? (store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": targetScheme]) as? [String: Any])?["last"] as? [String: Any] }
 }
 struct NativeHistory: View {
     @ObservedObject var store: NativeStore
@@ -218,7 +255,7 @@ struct NativeHistory: View {
                         }
                     } header: { Text(date + " · " + store.status(date).capitalized) }
                 }
-            }.scrollContentBackground(.hidden).refreshable { await store.connect() }
+            }.scrollContentBackground(.hidden).refreshable { await store.connect(manual:true) }
         }.sheet(item: $selected) { NativeExerciseDetail(store: store, exercise: $0, date: selectedDate) }
     }
 }

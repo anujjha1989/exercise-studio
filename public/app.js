@@ -160,13 +160,8 @@ function journey(){
   return {wPct,weeksIn,hit:Math.min(12,Object.values(by).filter(c=>c>=p.days.length).length),cur};
 }
 function records(skip){
-  const r={};
-  Object.keys(S.days).sort().forEach(k=>{if(k===skip||k>TODAY)return;S.days[k].entries.forEach(e=>e.sets.forEach(s=>{
-    let v,t;
-    if(s.s){v=s.s;t=s.s+" s"}else if(s.kg){v=s.kg*(1+s.r/30);t=s.kg+" kg × "+s.r}else{v=s.r;t=s.r+" reps"}
-    if(!r[e.ex]||v>r[e.ex].v)r[e.ex]={v,t,d:k};
-  }))});
-  return r;
+  const days=Object.fromEntries(Object.entries(S.days).filter(([d])=>d!==skip&&d<=TODAY));
+  return Object.fromEntries(Workout.summary(days,TODAY).records.map(record=>[record.id,{v:record.v,unit:record.unit,r:record.r,t:record.unit==="kg"?record.v+" kg × "+record.r:record.v+" "+record.unit,d:record.d}]));
 }
 function lastSets(id,before){
   const ks=Object.keys(S.days).filter(k=>k<before).sort().reverse();
@@ -174,21 +169,14 @@ function lastSets(id,before){
   return null;
 }
 function suggest(e,date){
-  const sc=P?playerScheme():scheme(),L=lastSets(e.id,date),lastTxt=L?"Last time ("+short(L.d)+"): "+L.sets.map(setTxt).join(" · "):"";
-  if(e.timed){const best=L?Math.max(...L.sets.map(s=>s.s||0)):0,t=best?Math.min(120,best+5):sc.hold;
-    return {s:t,lastTxt,note:best?"Beat your "+best+" s: aim for "+t+" s.":"Start with "+t+" s."}}
-  if(!L)return {r:sc.lo,kg:null,lastTxt,note:e.eq==="bw"?"Aim for "+sc.lo+" to "+sc.hi+" reps.":"Pick a weight you can lift "+sc.lo+" times with good form."};
-  const kg=Math.max(...L.sets.map(s=>s.kg||0)),top=L.sets.filter(s=>(s.kg||0)===kg),minR=Math.min(...top.map(s=>s.r||0));
-  if(kg>0){
-    if(top.length>=sc.sets*(e.unilateral?2:1)&&minR>=sc.hi){
-      const dbs=S.profile.dbs,up=dbs.filter(x=>x>kg).sort((a,b)=>a-b)[0]||(dbs.length?null:kg+1);
-      if(up)return {r:sc.lo,kg:up,lastTxt,note:"You hit "+sc.hi+" reps on every set. Go up to "+up+" kg."};
-      return {r:minR+1,kg,lastTxt,note:kg+" kg is your heaviest dumbbell. Take 3 seconds to lower each rep, or add a set."};
-    }
-    const r=Math.min(sc.hi,Math.max(sc.lo,minR+1));
-    return {r,kg,lastTxt,note:"Stay at "+kg+" kg and aim for "+r+" reps each set."};
-  }
-  return {r:minR+1,kg:null,lastTxt,note:minR>=20?"Aim for "+(minR+1)+". Past 20 reps, move to a harder variation or add a dumbbell.":"Aim for "+(minR+1)+" reps each set."};
+  const bodyweightOnly=e.eq==="both"&&S.days[date]?.plan?.bodyweightOnly;
+  const sc=P?playerScheme():S.days[date]?.plan?.scheme||scheme();
+  const target=Workout.recommendation(S.days,e.id,date,sc,S.profile.dbs,!!e.unilateral);
+  const lastTxt=target?"Last time ("+short(target.date)+"): "+setTxt(target.last):"";
+  if(bodyweightOnly)return {r:target?.reps||sc.lo,kg:null,lastTxt,note:"Bodyweight only for this session. Keep each repetition controlled."};
+  if(e.timed)return {s:target?.seconds||sc.hold,lastTxt,note:target?"Aim for "+target.seconds+" s, five more than last time, if you can keep good form.":"Use a controlled hold; stop when you cannot keep the starting position."};
+  if(!target)return {r:sc.lo,kg:null,lastTxt,note:"Aim for "+sc.lo+" to "+sc.hi+" comfortable reps with good form."};
+  return {r:target.reps,kg:target.kg||null,lastTxt,note:target.ready?"Two sessions at the top of your range. Try "+target.kg+" kg if your form stays comfortable.":"Keep your last weight and work within "+sc.lo+"–"+sc.hi+" reps."};
 }
 
 /* ================= rest timer + feedback ================= */
@@ -222,7 +210,7 @@ function logForm(e,date){
   const prev=UI.editing?S.days[date].entries[UI.editing.i].sets[UI.editing.k]:mine[mine.length-1];
   const side=e.unilateral?`<label class="f">Side<select id="l-side"><option value="left" ${prev&&prev.side==="left"?"selected":""}>Left</option><option value="right" ${prev&&prev.side==="right"?"selected":""}>Right</option></select></label>`:"";
   if(e.timed)return `<div class="steps">${stepper("l-secs",prev?prev.s:sg.s,5,"Seconds")}${side}<label class="f">Timer<button type="button" class="btn line" style="height:56px" data-act="hold" id="holdbtn">Start timer</button></label></div>`;
-  return `<div class="steps">${stepper("l-reps",prev?prev.r:sg.r,1,"Reps")}${side}${e.eq==="bw"?"":stepper("l-kg",prev?(prev.kg||""):(sg.kg||""),"kg",e.id==="goblet"||e.id==="sumo"||e.id==="pullover"||e.id==="triext"||e.id==="swing"||e.id==="twist"?"Dumbbell (kg)":"Each dumbbell (kg)")}</div>`;
+  return `<div class="steps">${stepper("l-reps",prev?prev.r:sg.r,1,"Reps")}${side}${e.eq==="bw"||e.eq==="both"&&today?.plan?.bodyweightOnly?"":stepper("l-kg",prev?(prev.kg||""):(sg.kg||""),"kg",e.id==="goblet"||e.id==="sumo"||e.id==="pullover"||e.id==="triext"||e.id==="swing"||e.id==="twist"?"Dumbbell (kg)":"Each dumbbell (kg)")}</div>`;
 }
 function setsHtml(e,date){
   const d=S.days[date],out=[];
@@ -266,7 +254,7 @@ function strengthHtml(){
   const ids=[...new Set(activityDays().flatMap(d=>S.days[d].entries.map(e=>e.ex)))];
   if(!ids.length)return `<div class="card stack"><h3 class="wide">Strength progress</h3><p class="mute">Log sets to compare your best set for each exercise over time.</p></div>`;
   if(!ids.includes(UI.strength))UI.strength=ids[0];
-  const pts=Workout.trend(S.days,UI.strength).filter(x=>x.d<=TODAY),last=pts[pts.length-1];
+  const pts=Workout.trend(S.days,UI.strength,TODAY),last=pts[pts.length-1];
   return `<div class="card stack"><h3 class="wide">Strength progress</h3><label class="f">Exercise<select id="strength-ex">${ids.map(id=>`<option value="${id}" ${UI.strength===id?"selected":""}>${esc(exName(id))}</option>`).join("")}</select></label>${lineChart(pts,null,last.unit)}<p class="sm mute">Best logged set each day${last.unit==="kg"?"; compare reps as well as load":""}. ${last.unit==="kg"?pts.slice(-4).map(x=>`${short(x.d)}: ${x.v} kg × ${x.r}`).join(" · "):""}</p></div>`;
 }
 /* ================= exercise sheet ================= */
@@ -326,7 +314,7 @@ function renderPlayer(){
   if(P.phase==="sum"){
     const d=S.days[P.date]||{entries:[],min:0},st=dayStats(d),mins=Math.round(Workout.elapsed(P)/60000);
     const complete=P.list.every(id=>doneSets(P.date,id)>=sc.sets);
-    const now=records(),prs=Object.keys(now).filter(id=>now[id].d===P.date&&(!P.before[id]||now[id].v>P.before[id].v));
+    const now=records(),prs=Object.keys(now).filter(id=>now[id].d===P.date&&(!P.before[id]||now[id].unit!==P.before[id].unit||now[id].v>P.before[id].v||now[id].v===P.before[id].v&&(now[id].r||0)>(P.before[id].r||0)));
     playerEl.className="player g-full";CTX=null;
     playerEl.innerHTML=`<div class="pcenter"><span class="eyebrow" style="color:#fff">${esc(P.name)} · ${nice(P.date)}</span><h1 class="wide" style="font-size:clamp(40px,11vw,96px)">${complete?"Workout complete":st.sets?"Workout saved as partial":"Workout cancelled"}</h1>
       <div class="stat3"><div><b>${mins}</b><span>minutes</span></div><div><b>${st.sets}</b><span>sets</span></div><div><b>${Math.round(st.vol)}</b><span>kg lifted</span></div></div>

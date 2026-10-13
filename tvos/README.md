@@ -1,7 +1,23 @@
-# Exercise Studio tvOS artwork
+# Exercise Studio for Apple TV
 
-Prepared assets only: this repository does not currently contain a tvOS app target.
+A native SwiftUI workout display with the shared SceneKit anatomy renderer and bundled exercise library. The phone remains responsible for logging and saving to the Pi. The TV never receives photos, profile, history or server credentials.
 
-`Assets.xcassets/Brand Assets.brandassets` includes 400×240 and 800×480 home-screen artwork, a 1280×768 large icon, and standard/wide top-shelf artwork at 1× and 2×. The supplied landscape master is `assets/tvos-icon.png`; regenerate using `python3 scripts/stage-icons.py` with Pillow 11.3.0.
+## Build
 
-When creating the tvOS target, include this catalog and set `ASSETCATALOG_COMPILER_APPICON_NAME` to `Brand Assets`. The supplied artwork remains flattened on the background layer, with an empty transparent foreground to satisfy Apple’s two-layer catalog requirement; it has no separated parallax artwork. Top-shelf images preserve the full artwork with burgundy side padding.
+Run `node scripts/stage-ios.js`, then `xcodegen generate --spec ios/project.yml` and `xcodegen generate --spec tvos/project.yml`. Open `ExerciseStudioTV.xcodeproj`, select ExerciseStudioTV and your Apple TV, and Run. Personal signing uses the same paid Apple team as the phone. tvOS 17+; no third-party native packages.
+
+## Pair and exercise
+
+To check pairing without logging, use **Setup → Connect Apple TV** on your iPhone.
+
+On the same local network, start a workout on the iPhone and tap **Show workout on Apple TV**. Enter its temporary 12-character code in the TV app. Allow Local Network access on each device when prompted. Live exercise, paired set progress, pause and rest status update once a second. Use the phone to log, skip rest, change exercise, pause and end. TV demos stop when the phone pauses or updates stop for eight seconds. Ending/disconnecting clears the session; codes change each time TV mode starts.
+
+The connection is direct Bonjour/TCP with AES-GCM authenticated encryption using a temporary random 60-bit pairing secret. Pairing attempts time out after ten seconds and the host stops after five incorrect codes. One TV can connect at a time. An intercepted code grants access to this session display until disconnected, so keep it private. This is local-network mode, not an Internet or Tailscale relay.
+
+## Icons
+
+`Assets.xcassets/Brand Assets.brandassets` is generated from the supplied `assets/tvos-icon.png` by `python3 scripts/stage-icons.py` with Pillow 11.3.0. It includes small/large icons and standard/wide top-shelf artwork. The original artwork remains flattened with a transparent second layer for Apple's catalog requirements.
+
+## Verification
+
+CI builds the TV app and compiles the icon catalog. Native loopback tests verify encrypted updates and wrong-code rejection. Simulator and physical-device checks must cover Bonjour discovery, permission prompts, pairing, phone backgrounding, rest/pause/end and disconnect. The offline TV library is available without a phone. It does not independently log workouts.

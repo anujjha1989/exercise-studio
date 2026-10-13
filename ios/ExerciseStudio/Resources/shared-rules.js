@@ -34,13 +34,13 @@ var window=this;
     let remaining=profile.minutes*60-180;
     return list.filter(e=>{const seconds=scheme.sets*(40+scheme.rest)*(e.unilateral?2:1);if(seconds>remaining)return false;remaining-=seconds;return true});
   }
-  function trend(days,id){
-    return Object.keys(days).sort().flatMap(d=>{
-      const entries=days[d].entries.filter(e=>e.ex===id),sets=entries.flatMap(e=>e.sets);
-      if(!sets.length)return [];
-      const weighted=sets.some(s=>s.kg>0),timed=sets.some(s=>s.s>0);
-      // Display a measured best set, not an estimated one-rep maximum.
-      const best=sets.slice().sort((a,b)=>weighted?(b.kg||0)-(a.kg||0)||(b.r||0)-(a.r||0):timed?(b.s||0)-(a.s||0):(b.r||0)-(a.r||0))[0];
+  function trend(days,id,end){
+    const records=Object.keys(days).filter(d=>!end||d<=end).sort().map(d=>({d,sets:(days[d].entries||[]).filter(e=>e.ex===id).flatMap(e=>e.sets||[])})).filter(x=>x.sets.length);
+    const weighted=records.some(x=>x.sets.some(s=>s.kg>0)),timed=!weighted&&records.some(x=>x.sets.some(s=>s.s>0));
+    return records.flatMap(({d,sets})=>{
+      const compatible=sets.filter(s=>weighted?s.kg>0:timed?s.s>0:s.r>0);
+      if(!compatible.length)return [];
+      const best=compatible.slice().sort((a,b)=>weighted?b.kg-a.kg||(b.r||0)-(a.r||0):timed?b.s-a.s:b.r-a.r)[0];
       return [{d,v:weighted?best.kg:timed?best.s:best.r,r:best.r,unit:weighted?"kg":timed?"s":"reps"}];
     });
   }
@@ -51,7 +51,30 @@ var window=this;
       return {d:point.d,v:Math.round(window.reduce((sum,p)=>sum+p.kg,0)/window.length*10)/10};
     });
   }
-  const api={eligible,setCount,status,elapsed,estimatedMinutes,fitTime,trend,weightTrend};
+  function recommendation(days,id,date,scheme,weights=[],unilateral=false){
+    const dates=Object.keys(days).filter(d=>d<date).sort().reverse();
+    const sessions=dates.map(d=>({date:d,sets:(days[d].entries||[]).filter(e=>e.ex===id).flatMap(e=>e.sets||[])})).filter(x=>x.sets.length);
+    if(!sessions.length)return null;
+    const last=sessions[0],set=last.sets[last.sets.length-1],kg=set.kg||0;
+    const qualified=x=>x.sets.length>=scheme.sets*(unilateral?2:1)&&x.sets.every(s=>(s.r||0)>=scheme.hi&&(s.kg||0)===kg)&&(!unilateral||['left','right'].every(side=>x.sets.filter(s=>s.side===side||!s.side).length>=scheme.sets));
+    const ready=kg>0&&sessions.length>=2&&sessions.slice(0,2).every(qualified);
+    const next=weights.filter(w=>Number.isFinite(w)&&w>kg).sort((a,b)=>a-b)[0];
+    return {date:last.date,last:set,kg:ready&&next?next:kg,reps:ready&&next?scheme.lo:Math.min(scheme.hi,Math.max(scheme.lo,(set.r||scheme.lo)+(set.r>=scheme.lo?1:0))),seconds:set.s?Math.min(120,set.s+5):scheme.hold,ready:ready&&!!next};
+  }
+  function substitutes(ex,all,profile,used=[]){
+    return all.filter(e=>e.id!==ex.id&&!used.includes(e.id)&&eligible(e,profile)&&e.g===ex.g&&e.mv===ex.mv&&!!e.timed===!!ex.timed&&!!e.unilateral===!!ex.unilateral);
+  }
+  function summary(days,date){
+    const keys=Object.keys(days).filter(d=>d<=date&&Number.isFinite(Date.parse(d+'T00:00:00Z'))).sort();
+    const end=Date.parse(date+'T00:00:00Z'),weekStart=end-6*86400000;
+    const active=keys.filter(d=>(days[d].entries||[]).some(e=>(e.sets||[]).length));
+    const records=[];
+    const ids=new Set(active.flatMap(d=>(days[d].entries||[]).map(e=>e.ex)));
+    const scoped=Object.fromEntries(keys.map(d=>[d,days[d]]));
+    for(const id of ids){const points=trend(scoped,id);if(points.length){const best=points.reduce((a,b)=>b.v>a.v||b.v===a.v&&(b.r||0)>(a.r||0)?b:a);const first=points[0];records.push({id,...best,change:best.v-first.v});}}
+    return {activeDays:active.length,weekDays:active.filter(d=>Date.parse(d+'T00:00:00Z')>=weekStart).length,completed:keys.filter(d=>status(days[d])==='completed').length,records};
+  }
+  const api={eligible,setCount,status,elapsed,estimatedMinutes,fitTime,trend,weightTrend,recommendation,substitutes,summary};
   if(typeof module!=="undefined")module.exports=api;else root.Workout=api;
 })(typeof window!=="undefined"?window:this);
 
@@ -411,6 +434,8 @@ function nextPlan(){for(let i=1;i<=7;i++){const d=addD(TODAY,i),s=planFor(d);if(
 function snapshotPlan(sess){const sc=scheme();return {name:sess.name,ids:sess.list.map(x=>x.id||x),sets:sc.sets,scheme:sc,unilateral:sess.list.map(x=>exById(x.id||x)).filter(e=>e&&e.unilateral).map(e=>e.id)}}
 
 var NativeRules={
+ timing:id=>JSON.stringify({beat:FigureMath.beat(exById(id)),poses:exById(id).poses.length}),
+ pose:(id,time)=>JSON.stringify(FigureMath.skeleton(exById(id),time)),
  defaultProfile:()=>JSON.stringify(defProfile()),
  run:(state,method,args)=>{S.profile=fixProfile(state.profile);S.days=state.days||{};TODAY=args.date||ymd(new Date());
  let result;
@@ -422,7 +447,11 @@ var NativeRules={
  case 'status':result=Workout.status(args.day);break;
  case 'count':result=Workout.setCount(args.day,args.id);break;
  case 'weight':result=Workout.weightTrend(S.profile.weigh);break;
- case 'trend':result=Workout.trend(S.days,args.id);break;
+ case 'trend':result=Workout.trend(S.days,args.id,TODAY);break;
+ case 'recommendation':result=Workout.recommendation(S.days,args.id,TODAY,args.scheme||scheme(),S.profile.dbs,!!exById(args.id)?.unilateral);break;
+ case 'summary':result=Workout.summary(S.days,TODAY);break;
+ case 'substitutes':result=Workout.substitutes(exById(args.id),exAll(),S.profile,args.used||[]).map(e=>e.id);break;
+ case 'flex':{const previous=S.profile;S.profile={...previous,minutes:args.minutes||previous.minutes,hasDumbbells:args.bodyweight?false:previous.hasDumbbells,dbs:args.bodyweight?[]:previous.dbs,chair:args.noChair?false:previous.chair};result=snapshotPlan(buildSession(Math.max(0,previous.days.indexOf(wdOf(TODAY))),TODAY));result.bodyweightOnly=!!args.bodyweight;S.profile=previous;break;}
  case 'skeleton':result=FigureMath.skeleton(exById(args.id),args.time||0);break;
  }
  return JSON.stringify(result);

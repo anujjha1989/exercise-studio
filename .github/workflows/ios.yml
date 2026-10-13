@@ -1,12 +1,17 @@
 name: iOS build
 on:
   push:
+    branches: [main]
     paths: ['tvos/**', 'ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
   pull_request:
     paths: ['tvos/**', 'ios/**', 'public/data.js', 'public/workout.js', 'public/figure-math.js', 'public/app.js', 'scripts/stage-ios.js', '.github/workflows/ios.yml']
+concurrency:
+  group: exercise-native-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: macos-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,3 +24,18 @@ jobs:
           mkdir -p /tmp/exercise-tv-assets
           xcrun actool tvos/Assets.xcassets --compile /tmp/exercise-tv-assets --platform appletvos --minimum-deployment-target 17.0 --target-device tv --app-icon 'Brand Assets' --output-partial-info-plist /tmp/exercise-tv-info.plist > /tmp/exercise-tv-result.plist
           python3 -c 'import plistlib; result=plistlib.load(open("/tmp/exercise-tv-result.plist", "rb")); assert not result.get("com.apple.actool.document.errors"), result'
+      - run: xcodebuild -project tvos/ExerciseStudioTV.xcodeproj -scheme ExerciseStudioTV -sdk appletvsimulator CODE_SIGNING_ALLOWED=NO build
+      - name: Encrypted TV transport regression
+        run: |
+          xcrun swiftc -parse-as-library ios/ExerciseStudio/TVLink.swift scripts/verify-tv-link.swift -o /tmp/exercise-tv-link-check
+          /tmp/exercise-tv-link-check
+      - name: Native unit and UI regression tests
+        run: |
+          destination=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for devices in d["devices"].values() for x in devices if x["name"].startswith("iPhone")))')
+          xcodebuild -project ios/ExerciseStudio.xcodeproj -scheme ExerciseStudio -destination "platform=iOS Simulator,id=$destination" -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test
+      - name: Preserve native test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-test-results
+          path: ~/Library/Developer/Xcode/DerivedData/ExerciseStudio-*/Logs/Test/*.xcresult
