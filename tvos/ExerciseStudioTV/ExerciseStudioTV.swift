@@ -19,7 +19,7 @@ struct TVWorkoutView: View {
         NavigationStack {
             VStack(spacing:24) {
                 if let id = link.snapshot["exercise"] as? String, let ex = store.exercises.first(where: {$0.id == id}) {
-                    TimelineView(.periodic(from:.now,by:1)) { _ in
+                    TimelineView(.periodic(from:.now,by:1)) { context in
                         HStack(spacing:48) {
                             NativeDemo(store:store,exercise:ex, externallyPaused: stale || link.snapshot["paused"] as? Bool == true, bodyweightOnly: link.snapshot["bodyweightOnly"] as? Bool == true).frame(width:850,height:650).clipShape(RoundedRectangle(cornerRadius:28))
                             VStack(alignment:.leading,spacing:24) {
@@ -32,7 +32,7 @@ struct TVWorkoutView: View {
                                 ScrollView { VStack(alignment:.leading,spacing:16) { ForEach(Array(ex.steps.enumerated()),id:\.offset) { i,step in Text("\(i+1). \(step)").font(.body) } } }.frame(maxHeight:350).focusable()
                                 Text(link.snapshot["preview"] as? Bool == true ? "Control this preview on your iPhone." : "Log sets and control the session on your iPhone.").font(.caption).foregroundStyle(.secondary)
                             }.frame(maxWidth:600)
-                        }
+                        }.onChange(of: context.date) { _,_ in updateIdleTimer() }
                     }
                     Button("Disconnect") { link.browse(); endpoint=nil; code="" }
                 } else if library {
@@ -65,7 +65,8 @@ struct TVWorkoutView: View {
 
     }
     private func updateIdleTimer() {
-        UIApplication.shared.isIdleTimerDisabled = link.status == "Connected to iPhone" && link.snapshot["paused"] as? Bool != true
+        let active = link.status == "Connected to iPhone" && link.snapshot["paused"] as? Bool != true && !stale
+        if UIApplication.shared.isIdleTimerDisabled != active { UIApplication.shared.isIdleTimerDisabled = active }
     }
 
 }
