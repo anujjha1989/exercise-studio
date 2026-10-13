@@ -59,6 +59,13 @@ struct TVWorkoutView: View {
                 }
             }.padding(40).frame(maxWidth:.infinity,maxHeight:.infinity).background(Color(red:0.04,green:0.07,blue:0.18))
         }.tint(.orange).task { link.browse() }
-        .onDisappear { link.stop() }
+        .onChange(of: link.status) { _,_ in updateIdleTimer() }
+        .onChange(of: link.snapshot["paused"] as? Bool) { _,_ in updateIdleTimer() }
+        .onDisappear { link.stop(); UIApplication.shared.isIdleTimerDisabled=false }
+
     }
+    private func updateIdleTimer() {
+        UIApplication.shared.isIdleTimerDisabled = link.status == "Connected to iPhone" && link.snapshot["paused"] as? Bool != true
+    }
+
 }

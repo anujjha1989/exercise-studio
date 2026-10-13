@@ -15,7 +15,7 @@ struct NativeTVPreview: View {
                 Section("Apple TV connection") {
                     Text(link.status)
                     if !link.code.isEmpty { Text(link.code).font(.title2.monospaced().bold()).textSelection(.enabled) }
-                    Text("Open Exercise Studio on Apple TV and enter this code. Both devices need to be on the same local network.").font(.caption).foregroundStyle(.secondary)
+                    Text("Open Exercise Studio on Apple TV and enter this code. Both devices need to be on the same local network. Keep this screen open while connected.").font(.caption).foregroundStyle(.secondary)
                     Button("New connection code") { link.host(); publish() }
                 }
                 Section("Preview exercise") {
