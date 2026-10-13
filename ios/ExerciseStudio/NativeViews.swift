@@ -110,7 +110,7 @@ struct NativeToday: View {
                         Button(NativeWorkout.hasResume(store.address) ? "Resume workout" : "Start workout") { player = NativeWorkout(store: store, plan: plan) }.buttonStyle(.borderedProminent).controlSize(.large)
                         Button("Adjust today's session", systemImage: "slider.horizontal.3") { adjust = true }
                             .disabled(NativeWorkout.hasResume(store.address) || (store.day(store.today)["entries"] as? [[String: Any]] ?? []).contains { !($0["sets"] as? [[String: Any]] ?? []).isEmpty })
-                        if store.days[store.today] != nil { Text(store.status(store.today).capitalized).font(.headline).foregroundStyle(studioOrange) }
+                        if store.day(store.today)["started"] as? Bool == true || (store.day(store.today)["entries"] as? [[String:Any]] ?? []).contains(where: { !($0["sets"] as? [[String:Any]] ?? []).isEmpty }) { Text(store.status(store.today).capitalized).font(.headline).foregroundStyle(studioOrange) }
                         ForEach(plan["ids"] as? [String] ?? [], id: \.self) { id in
                             if let exercise = store.exercises.first(where: { $0.id == id }) {
                                 Button { selected = exercise } label: {
