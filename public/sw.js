@@ -1,11 +1,11 @@
 // A complete versioned shell: never mix old scripts with a new document.
 // The server replaces this name with one derived from the app files (see release-stamp.js).
 const CACHE = "exercise-studio-dev";
-const SHELL = ["./", "index.html", "app.css", "workout.js", "figure-math.js", "boot.mjs", "vendor/three.module.js", "vendor/three.core.js", "fonts/archivo.ttf", "fonts/azeret-mono.ttf", "data.js", "figure.js", "app.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
+const SHELL = ["./", "index.html", "app.css", "workout.js", "figure-math.js", "boot.mjs", "vendor/three.module.js", "vendor/three.core.js", "fonts/archivo.ttf", "fonts/azeret-mono.ttf", "data.js", "figure.js", "app.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "icon-16.png", "icon-32.png", "icon-maskable-512.png", "favicon.ico"];
 function valid(response, url) {
   if (!response.ok || response.redirected) return false;
   const type = response.headers.get("Content-Type") || "";
-  return (/\.m?js$/.test(url)) ? type.includes("javascript") : url.endsWith(".css") ? type.includes("text/css") : url.endsWith(".png") ? type.includes("image/png") : url.endsWith(".ttf") ? type.includes("font/ttf") : url.endsWith(".webmanifest") ? type.includes("manifest+json") : type.includes("text/html");
+  return (/\.m?js$/.test(url)) ? type.includes("javascript") : url.endsWith(".css") ? type.includes("text/css") : url.endsWith(".ico") ? type.includes("image/x-icon") : url.endsWith(".png") ? type.includes("image/png") : url.endsWith(".ttf") ? type.includes("font/ttf") : url.endsWith(".webmanifest") ? type.includes("manifest+json") : type.includes("text/html");
 }
 self.addEventListener("install", event => {
   event.waitUntil((async () => {

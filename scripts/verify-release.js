@@ -4,7 +4,7 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const {serviceWorker}=require('../release-stamp');
 const origin=process.argv[2]||'http://127.0.0.1:4320/';
-const types={'.html':'text/html','.js':'javascript','.mjs':'javascript','.txt':'text/plain','.css':'text/css','.png':'image/png','.webmanifest':'application/manifest+json','.ttf':'font/ttf'};
+const types={'.html':'text/html','.js':'javascript','.mjs':'javascript','.txt':'text/plain','.css':'text/css','.ico':'image/x-icon','.png':'image/png','.webmanifest':'application/manifest+json','.ttf':'font/ttf'};
 const hash=data=>crypto.createHash('sha256').update(data).digest('hex');
 (async()=>{
   const health=await fetch(new URL('api/health',origin),{signal:AbortSignal.timeout(5000)});
