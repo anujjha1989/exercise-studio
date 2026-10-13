@@ -76,7 +76,7 @@ final class TVLink: ObservableObject {
     private func prepare(_ connection:NWConnection,host:Bool) {
         let token = generation
         connection.stateUpdateHandler = { [weak self,weak connection] state in Task { @MainActor in
-            guard let self,let connection,self.generation == token else { return }
+            guard let self,let connection,self.generation == token,self.connections.contains(where: {$0 === connection}) else { return }
             switch state {
             case .ready:
                 self.status = "Pairing…"; self.receive(connection,host:host,token:token)
@@ -103,13 +103,15 @@ final class TVLink: ObservableObject {
     }
     private func receive(_ connection:NWConnection,host:Bool,token:UUID) {
         connection.receive(minimumIncompleteLength:1,maximumLength:65536) { [weak self,weak connection] data,_,complete,error in Task { @MainActor in
-            guard let self,let connection,self.generation == token else { return }
+            guard let self,let connection,self.generation == token,self.connections.contains(where: {$0 === connection}) else { return }
             if let data { self.buffer.append(data) }
             while self.buffer.count >= 4 {
                 let length = self.buffer.prefix(4).reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
                 guard length > 0,length <= 65564 else { connection.cancel(); return }
                 guard self.buffer.count >= Int(length)+4 else { break }
-                let encrypted = self.buffer.subdata(in:4..<(Int(length)+4)); self.buffer.removeFirst(Int(length)+4)
+                let start = self.buffer.index(self.buffer.startIndex,offsetBy:4)
+                let end = self.buffer.index(start,offsetBy:Int(length))
+                let encrypted = Data(self.buffer[start..<end]); self.buffer = Data(self.buffer.dropFirst(Int(length)+4))
                 guard let key = self.key,let box = try? AES.GCM.SealedBox(combined:encrypted),let clear = try? AES.GCM.open(box,using:key),let value = try? JSONSerialization.jsonObject(with:clear) as? [String:Any] else {
                     self.failures += 1; connection.cancel(); if host && self.failures >= 5 { self.stop(); self.status = "Pairing stopped after repeated incorrect codes. Start TV mode again." }; return
                 }
