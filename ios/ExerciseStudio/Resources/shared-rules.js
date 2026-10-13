@@ -59,7 +59,7 @@ var window=this;
     const qualified=x=>x.sets.length>=scheme.sets*(unilateral?2:1)&&x.sets.every(s=>(s.r||0)>=scheme.hi&&(s.kg||0)===kg)&&(!unilateral||['left','right'].every(side=>x.sets.filter(s=>s.side===side||!s.side).length>=scheme.sets));
     const ready=kg>0&&sessions.length>=2&&sessions.slice(0,2).every(qualified);
     const next=weights.filter(w=>Number.isFinite(w)&&w>kg).sort((a,b)=>a-b)[0];
-    return {date:last.date,last:set,kg:ready&&next?next:kg,reps:ready&&next?scheme.lo:Math.min(scheme.hi,Math.max(scheme.lo,(set.r||scheme.lo)+(set.r>=scheme.lo?1:0))),seconds:set.s||scheme.hold,ready:ready&&!!next};
+    return {date:last.date,last:set,kg:ready&&next?next:kg,reps:ready&&next?scheme.lo:Math.min(scheme.hi,Math.max(scheme.lo,(set.r||scheme.lo)+(set.r>=scheme.lo?1:0))),seconds:set.s?Math.min(120,set.s+5):scheme.hold,ready:ready&&!!next};
   }
   function substitutes(ex,all,profile,used=[]){
     return all.filter(e=>e.id!==ex.id&&!used.includes(e.id)&&eligible(e,profile)&&e.g===ex.g&&e.mv===ex.mv&&!!e.timed===!!ex.timed&&!!e.unilateral===!!ex.unilateral);

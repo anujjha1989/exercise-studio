@@ -174,7 +174,7 @@ function suggest(e,date){
   const target=Workout.recommendation(S.days,e.id,date,sc,S.profile.dbs,!!e.unilateral);
   const lastTxt=target?"Last time ("+short(target.date)+"): "+setTxt(target.last):"";
   if(bodyweightOnly)return {r:target?.reps||sc.lo,kg:null,lastTxt,note:"Bodyweight only for this session. Keep each repetition controlled."};
-  if(e.timed)return {s:target?.seconds||sc.hold,lastTxt,note:"Use a controlled hold; stop when you cannot keep the starting position."};
+  if(e.timed)return {s:target?.seconds||sc.hold,lastTxt,note:target?"Aim for "+target.seconds+" s, five more than last time, if you can keep good form.":"Use a controlled hold; stop when you cannot keep the starting position."};
   if(!target)return {r:sc.lo,kg:null,lastTxt,note:"Aim for "+sc.lo+" to "+sc.hi+" comfortable reps with good form."};
   return {r:target.reps,kg:target.kg||null,lastTxt,note:target.ready?"Two sessions at the top of your range. Try "+target.kg+" kg if your form stays comfortable.":"Keep your last weight and work within "+sc.lo+"–"+sc.hi+" reps."};
 }

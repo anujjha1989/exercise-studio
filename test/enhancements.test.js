@@ -26,3 +26,8 @@ test('progress summary excludes future records',()=>{
  const days={'2026-10-01':day([{r:8,kg:5}]),'2026-11-01':day([{r:8,kg:50}])};
  assert.equal(W.summary(days,'2026-10-02').records[0].v,5);
 });
+test('timed exercises aim five seconds past the last hold, capped at two minutes',()=>{
+ const hold=s=>({entries:[{ex:'plank',sets:[{s}]}]});
+ assert.equal(W.recommendation({'2026-10-01':hold(40)},'plank','2026-10-02',scheme).seconds,45);
+ assert.equal(W.recommendation({'2026-10-01':hold(118)},'plank','2026-10-02',scheme).seconds,120);
+});
