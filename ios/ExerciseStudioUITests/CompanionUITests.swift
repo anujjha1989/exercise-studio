@@ -34,3 +34,22 @@ extension CompanionUITests {
         XCTAssertEqual(app.webViews.count,0)
     }
 }
+
+// Exercise the reorganized destinations without contacting the live service.
+extension CompanionUITests {
+    func testSettingsDestinationsAndDarkAppearance() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-nativeUITestOffline", "-AppleInterfaceStyle", "Dark", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Settings"].waitForExistence(timeout:15))
+        app.tabBars.buttons["Settings"].tap()
+        app.buttons["Training Plan"].tap()
+        XCTAssertTrue(app.navigationBars["Training Plan"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.staticTexts.matching(identifier:"Goal").firstMatch.exists)
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["Equipment"].tap()
+        XCTAssertTrue(app.switches["I have dumbbells"].waitForExistence(timeout:5))
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Dark settings at accessibility text size"; attachment.lifetime = .keepAlways; add(attachment)
+    }
+}
