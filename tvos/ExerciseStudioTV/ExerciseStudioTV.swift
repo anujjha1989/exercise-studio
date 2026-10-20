@@ -98,7 +98,7 @@ struct TVWorkoutView: View {
               : "3. Enter the connection code shown on your iPhone."
           ).multilineTextAlignment(.center).frame(maxWidth: 900)
           ForEach(Array(link.devices.enumerated()), id: \.offset) { _, device in
-            Button("Connect to iPhone") { endpoint = device.endpoint }.buttonStyle(
+            Button(deviceName(device.endpoint)) { endpoint = device.endpoint }.buttonStyle(
               .borderedProminent)
           }
           if endpoint != nil {
@@ -121,6 +121,12 @@ struct TVWorkoutView: View {
         UIApplication.shared.isIdleTimerDisabled = false
       }
 
+  }
+  private func deviceName(_ endpoint: NWEndpoint) -> String {
+    if case .service(let name, _, _, _) = endpoint {
+      return "Connect to " + name.replacingOccurrences(of: " · Exercise Studio", with: "")
+    }
+    return "Connect to iPhone"
   }
   private func updateIdleTimer() {
     let active =

@@ -208,9 +208,9 @@ struct NativeDemo: View {
                 Menu {
                     Button("Replay", systemImage:"arrow.counterclockwise") { time = 0; draw() }
                     Button("Starting Position") { playing = false; time = 0; draw() }
-                    Toggle("Highlight Muscles", isOn:$highlights).onChange(of:highlights) { _,_ in draw() }
+                    Toggle("Highlight Muscles", isOn:Binding(get:{highlights},set:{ highlights=$0; draw() }))
                     Toggle("Slow Motion", isOn:$slow)
-                    Toggle("Movement Path", isOn:$showPath).onChange(of:showPath) { _,_ in draw() }
+                    Toggle("Movement Path", isOn:Binding(get:{showPath},set:{ showPath=$0; draw() }))
                 } label: { Label("Options",systemImage:"ellipsis.circle").frame(minHeight:44) }
     }
     private func draw() { figure.update(store:store,exercise:exercise,time:time,highlights:highlights,view:view,showPath:showPath,bodyweightOnly:bodyweightOnly) }

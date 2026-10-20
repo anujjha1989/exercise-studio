@@ -67,5 +67,10 @@ extension CompanionUITests {
         XCTAssertTrue(app.buttons["Log set"].waitForExistence(timeout:5))
         XCTAssertFalse(app.buttons["Isometric"].exists)
         let attachment = XCTAttachment(screenshot:app.screenshot()); attachment.name = "Compact set entry"; attachment.lifetime = .keepAlways; add(attachment)
+        app.buttons["Done"].tap()
+        app.buttons["End"].tap()
+        let save = app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Save ")).firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout:5)); save.tap()
+
     }
 }
