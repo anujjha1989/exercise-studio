@@ -153,6 +153,13 @@ struct NativePlayerView: View {
               bodyweightOnly: workout.plan["bodyweightOnly"] as? Bool == true
             ).frame(minHeight: 320).clipShape(RoundedRectangle(cornerRadius: 20))
             Text(exercise.tip).font(.body).foregroundStyle(.secondary)
+            DisclosureGroup("Form Guidance") {
+              VStack(alignment: .leading, spacing: 12) {
+                ForEach(Array(exercise.steps.enumerated()), id: \.offset) { index, step in
+                  Text("\(index+1). \(step)").frame(maxWidth: .infinity, alignment: .leading)
+                }
+              }.padding(.top, 8)
+            }
             Text(
               "\(store.count(workout.date, exercise.id)) / \(workout.plan["sets"] as? Int ?? 2) sets · \(groupName(exercise.g))"
             ).font(.headline)
@@ -199,8 +206,11 @@ struct NativePlayerView: View {
                   workout.index = min(workout.ids.count - 1, workout.index + 1)
                   workout.restEnd = nil
                 }.disabled(workout.index >= workout.ids.count - 1)
-              }.labelStyle(.iconOnly).buttonStyle(.borderless).frame(minHeight: 44)
-            }.padding(.horizontal, 24).padding(.vertical, 8).background(.regularMaterial)
+              }.labelStyle(.iconOnly).buttonStyle(.borderless).controlSize(.large).frame(
+                minHeight: 44)
+            }.padding(.horizontal, 24).padding(.vertical, 12)
+              .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
+              .padding(.horizontal, 16).padding(.vertical, 8)
           }
         }
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("End") { confirmEnd = true } } }

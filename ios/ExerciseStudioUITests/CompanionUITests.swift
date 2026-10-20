@@ -2,7 +2,7 @@ import XCTest
 
 final class CompanionUITests: XCTestCase {
     func testNativeLibraryDemoAndSingleTitle() {
-        let app = XCUIApplication(); app.launchArguments = ["-nativeUITestOffline"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["-nativeUITestOffline", "-AppleInterfaceStyle", "Light"]; app.launch()
 
         XCTAssertTrue(app.tabBars.buttons["Library"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["Saved on your Pi"].exists)
@@ -51,5 +51,21 @@ extension CompanionUITests {
         XCTAssertTrue(app.switches["I have dumbbells"].waitForExistence(timeout:5))
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Dark settings at accessibility text size"; attachment.lifetime = .keepAlways; add(attachment)
+    }
+}
+
+extension CompanionUITests {
+    func testWorkoutControlsRemainAvailableAndLoggingIsCompact() {
+        let app = XCUIApplication(); app.launchArguments = ["-nativeUITestOffline"]; app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout:15))
+        let start = ["Start workout", "Resume workout", "Train anyway"].map { app.buttons[$0] }.first { $0.exists }
+        XCTAssertNotNil(start); start?.tap()
+        let log = app.buttons["workoutLogSet"]
+        XCTAssertTrue(log.waitForExistence(timeout:5)); XCTAssertTrue(log.isHittable)
+        app.swipeUp(); XCTAssertTrue(log.isHittable)
+        log.tap()
+        XCTAssertTrue(app.buttons["Log set"].waitForExistence(timeout:5))
+        XCTAssertFalse(app.buttons["Isometric"].exists)
+        let attachment = XCTAttachment(screenshot:app.screenshot()); attachment.name = "Compact set entry"; attachment.lifetime = .keepAlways; add(attachment)
     }
 }
