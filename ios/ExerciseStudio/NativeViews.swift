@@ -24,6 +24,19 @@ struct NativeRootView: View {
     @Environment(\.scenePhase) private var phase
     @AppStorage("keepScreenAwake") private var keepAwake = false
     private var offlineUITest: Bool { studioTesting }
+    // Deterministic preview appearance for offline UI tests only; normal launches follow the system.
+    private var testAppearance: ColorScheme? {
+        #if DEBUG
+        guard offlineUITest else { return nil }
+        switch ProcessInfo.processInfo.environment["UITEST_APPEARANCE"] {
+        case "dark": return .dark
+        case "light": return .light
+        default: return nil
+        }
+        #else
+        return nil
+        #endif
+    }
     var body: some View {
         TabView {
             NativeToday(store: store).tabItem { Label("Today", systemImage: "house") }
@@ -33,6 +46,7 @@ struct NativeRootView: View {
             NativeSetup(store: store).tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
         }
         .tint(studioOrange)
+        .preferredColorScheme(testAppearance)
         .sheet(isPresented: Binding(get: { store.needsSignIn && !store.workoutActive && !store.tvPreviewActive }, set: { value in if !value && !store.workoutActive && !store.tvPreviewActive && store.needsSignIn { store.useOffline() } })) { NativeSignIn(store: store).ignoresSafeArea(edges: .bottom) }
         .sheet(item: $store.file) { FileShareView(url: $0.url) }
         .task { if !offlineUITest { store.startReconnection(); await store.connect() } }

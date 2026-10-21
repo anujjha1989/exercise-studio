@@ -2,7 +2,7 @@ import XCTest
 
 final class CompanionUITests: XCTestCase {
     func testNativeLibraryDemoAndSingleTitle() {
-        let app = XCUIApplication(); app.launchArguments = ["-nativeUITestOffline", "-AppleInterfaceStyle", "Light"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["-nativeUITestOffline", "-AppleInterfaceStyle", "Light"]; app.launchEnvironment["UITEST_APPEARANCE"] = "light"; app.launch()
 
         XCTAssertTrue(app.tabBars.buttons["Library"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["Saved on your Pi"].exists)
@@ -40,6 +40,7 @@ extension CompanionUITests {
     func testSettingsDestinationsAndDarkAppearance() {
         let app = XCUIApplication()
         app.launchArguments = ["-nativeUITestOffline", "-AppleInterfaceStyle", "Dark", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launchEnvironment["UITEST_APPEARANCE"] = "dark"
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["Settings"].waitForExistence(timeout:15))
         app.tabBars.buttons["Settings"].tap()

@@ -370,7 +370,7 @@ struct NativeSetup: View {
   private var equipmentScreen: some View {
     Form {
 
-      Section("Equipment") {
+      Section {
         Toggle("I have dumbbells", isOn: boolBinding("hasDumbbells", true))
         Toggle("Sturdy chair or bench", isOn: boolBinding("chair", true))
         Toggle("Low-impact exercises", isOn: boolBinding("lowImpact", false))
