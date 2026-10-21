@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 let studioGroups = ["chest", "back", "shoulders", "arms", "core", "legs", "cardio"]
 func groupName(_ key: String) -> String { ["chest":"Chest", "back":"Back", "shoulders":"Shoulders", "arms":"Arms", "core":"Core", "legs":"Legs & glutes", "cardio":"Cardio"][key] ?? key.capitalized }
 let studioOrange = Color(red: 1, green: 0.36, blue: 0.1)
-let studioPaper = Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 10/255, green: 18/255, blue: 48/255, alpha: 1) : UIColor(red: 237/255, green: 241/255, blue: 244/255, alpha: 1) })
+let studioPaper = Color(uiColor: .systemGroupedBackground)
 func setLabel(_ set: [String: Any]) -> String {
     let seconds = set["s"] as? Int ?? 0, reps = set["r"] as? Int ?? 0, kg = set["kg"] as? Double ?? 0
     return (seconds > 0 ? "\(seconds) sec" : "\(reps) reps" + (kg > 0 ? " · \(kg.formatted()) kg" : "")) + ((set["side"] as? String).map { " · " + $0.capitalized } ?? "")
@@ -24,15 +24,29 @@ struct NativeRootView: View {
     @Environment(\.scenePhase) private var phase
     @AppStorage("keepScreenAwake") private var keepAwake = false
     private var offlineUITest: Bool { studioTesting }
+    // Deterministic preview appearance for offline UI tests only; normal launches follow the system.
+    private var testAppearance: ColorScheme? {
+        #if DEBUG
+        guard offlineUITest else { return nil }
+        switch ProcessInfo.processInfo.environment["UITEST_APPEARANCE"] {
+        case "dark": return .dark
+        case "light": return .light
+        default: return nil
+        }
+        #else
+        return nil
+        #endif
+    }
     var body: some View {
         TabView {
             NativeToday(store: store).tabItem { Label("Today", systemImage: "house") }
             NativeLibrary(store: store).tabItem { Label("Library", systemImage: "dumbbell") }
             NativeHistory(store: store).tabItem { Label("History", systemImage: "calendar") }
             NativeProgress(store: store).tabItem { Label("Progress", systemImage: "chart.xyaxis.line") }
-            NativeSetup(store: store).tabItem { Label("Setup", systemImage: "slider.horizontal.3") }
+            NativeSetup(store: store).tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
         }
         .tint(studioOrange)
+        .preferredColorScheme(testAppearance)
         .sheet(isPresented: Binding(get: { store.needsSignIn && !store.workoutActive && !store.tvPreviewActive }, set: { value in if !value && !store.workoutActive && !store.tvPreviewActive && store.needsSignIn { store.useOffline() } })) { NativeSignIn(store: store).ignoresSafeArea(edges: .bottom) }
         .sheet(item: $store.file) { FileShareView(url: $0.url) }
         .task { if !offlineUITest { store.startReconnection(); await store.connect() } }
@@ -56,10 +70,6 @@ struct NativeShell<Content: View>: View {
             content
                 .background(studioPaper)
                 .navigationTitle(title)
-                .toolbarBackground(studioPaper, for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
-                .toolbarBackground(studioPaper, for: .tabBar)
-                .toolbarBackground(.visible, for: .tabBar)
                 .safeAreaInset(edge: .top, spacing: 0) {
                     if store.pendingCount > 0 && store.message == nil && store.conflicts.isEmpty {
                         HStack(spacing: 8) { Image(systemName: store.syncing ? "arrow.triangle.2.circlepath" : "icloud.and.arrow.up"); Text(store.syncing ? "Syncing edits…" : "Waiting to sync · \(store.pendingCount) records"); Spacer() }.font(.caption).padding(12).background(.regularMaterial)
@@ -175,17 +185,18 @@ struct NativeExerciseDetail: View {
     var body: some View {
         NavigationStack {
             Form {
-                if exercise.custom == nil { Section { NativeDemo(store: store, exercise: exercise, bodyweightOnly: bodyweightOnly).listRowInsets(EdgeInsets()).frame(height: 330) } }
-                Section("Form") {
+                if exercise.custom == nil && onLog == nil { Section { NativeDemo(store: store, exercise: exercise, bodyweightOnly: bodyweightOnly).listRowInsets(EdgeInsets()).frame(minHeight: 360) } }
+                if onLog == nil { Section("Form") {
                     Text((exercise.muscles ?? [groupName(exercise.g)]).joined(separator: ", ")).font(.subheadline.bold())
                     ForEach(Array(exercise.steps.enumerated()), id: \.offset) { i, step in Text("\(i + 1). \(step)") }
                     if !exercise.tip.isEmpty { Text(exercise.tip).foregroundStyle(.secondary) }
+                }
                 }
                 Section("Your target") {
                     if let target = store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": targetScheme]) as? [String: Any] {
                         Text("Last session · " + (target["date"] as? String ?? "") + " · " + setLabel(target["last"] as? [String: Any] ?? [:])).font(.subheadline)
                         if target["ready"] as? Bool == true { Text("You reached the top of your range in two sessions. Try the next available weight if your form stays comfortable.").font(.caption).foregroundStyle(.secondary) }
-                    } else { Text("Start comfortably and use the form guidance above.").font(.subheadline).foregroundStyle(.secondary) }
+                    } else { Text(onLog == nil ? "Start comfortably and use the form guidance above." : "Start comfortably. Form guidance is available in your workout.").font(.subheadline).foregroundStyle(.secondary) }
                 }
                 Section(editIndex == nil ? "Log set" : "Edit set") {
                     if exercise.timed == 1 {

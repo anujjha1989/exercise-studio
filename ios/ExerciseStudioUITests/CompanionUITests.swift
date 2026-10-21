@@ -2,7 +2,7 @@ import XCTest
 
 final class CompanionUITests: XCTestCase {
     func testNativeLibraryDemoAndSingleTitle() {
-        let app = XCUIApplication(); app.launchArguments = ["-nativeUITestOffline"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["-nativeUITestOffline", "-AppleInterfaceStyle", "Light"]; app.launchEnvironment["UITEST_APPEARANCE"] = "light"; app.launch()
 
         XCTAssertTrue(app.tabBars.buttons["Library"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["Saved on your Pi"].exists)
@@ -32,5 +32,48 @@ extension CompanionUITests {
         app.tabBars.buttons["Progress"].tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS[c] %@","Your consistency")).firstMatch.waitForExistence(timeout:5))
         XCTAssertEqual(app.webViews.count,0)
+    }
+}
+
+// Exercise the reorganized destinations without contacting the live service.
+extension CompanionUITests {
+    func testSettingsDestinationsAndDarkAppearance() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-nativeUITestOffline", "-AppleInterfaceStyle", "Dark", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launchEnvironment["UITEST_APPEARANCE"] = "dark"
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Settings"].waitForExistence(timeout:15))
+        app.tabBars.buttons["Settings"].tap()
+        app.buttons["Training Plan"].tap()
+        XCTAssertTrue(app.navigationBars["Training Plan"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.staticTexts.matching(identifier:"Goal").firstMatch.exists)
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["Equipment"].tap()
+        XCTAssertTrue(app.switches["I have dumbbells"].waitForExistence(timeout:5))
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Dark settings at accessibility text size"; attachment.lifetime = .keepAlways; add(attachment)
+    }
+}
+
+extension CompanionUITests {
+    func testWorkoutControlsRemainAvailableAndLoggingIsCompact() {
+        let app = XCUIApplication(); app.launchArguments = ["-nativeUITestOffline"]; app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout:15))
+        let start = ["Start workout", "Resume workout", "Train anyway"].map { app.buttons[$0] }.first { $0.exists }
+        XCTAssertNotNil(start); start?.tap()
+        let log = app.buttons["workoutLogSet"]
+        XCTAssertTrue(log.waitForExistence(timeout:5)); XCTAssertTrue(log.isHittable)
+        app.swipeUp(); XCTAssertTrue(log.isHittable)
+        log.tap()
+        XCTAssertTrue(app.buttons["Log set"].waitForExistence(timeout:5))
+        // UIKit retains the workout beneath the sheet in its accessibility tree.
+        XCTAssertFalse(app.buttons["Isometric"].isHittable)
+        XCTAssertTrue(app.buttons["Log set"].isHittable)
+        let attachment = XCTAttachment(screenshot:app.screenshot()); attachment.name = "Compact set entry"; attachment.lifetime = .keepAlways; add(attachment)
+        app.buttons["Done"].tap()
+        app.buttons["End"].tap()
+        let save = app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Save ")).firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout:5)); save.tap()
+
     }
 }

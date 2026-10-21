@@ -3,22 +3,25 @@ import Combine
 import SceneKit
 import simd
 
+// Shared surface resolves per platform; tvOS does not expose systemBackground.
+let demoSurface: UIColor = {
+#if os(tvOS)
+    UIColor { $0.userInterfaceStyle == .dark ? UIColor(white:0.08,alpha:1) : UIColor(white:0.96,alpha:1) }
+#else
+    UIColor.systemBackground
+#endif
+}()
+
+
 @MainActor
 final class NativeFigure: ObservableObject {
     let scene = SCNScene(), camera = SCNNode()
     private var pathExercise = ""
     private var pathPoints: [SIMD3<Float>] = []
-    private var muscleTexture: UIImage? = {
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 8))
-        return renderer.image { ctx in
-            UIColor.white.setFill(); ctx.fill(CGRect(x:0,y:0,width:128,height:8))
-            for x in stride(from:0,to:128,by:3) { UIColor(white:0.96,alpha:1).setFill(); ctx.fill(CGRect(x:x,y:0,width:1,height:8)) }
-        }
-    }()
     private var nodes: [String: SCNNode] = [:]
     init() {
-        scene.background.contents = UIColor.white
-        camera.camera = SCNCamera(); camera.camera?.usesOrthographicProjection = true; camera.camera?.orthographicScale = 48; camera.camera?.zNear = 0.1; camera.camera?.zFar = 600
+        scene.background.contents = demoSurface
+        camera.camera = SCNCamera(); camera.camera?.usesOrthographicProjection = true; camera.camera?.orthographicScale = 43; camera.camera?.zNear = 0.1; camera.camera?.zFar = 600
         scene.rootNode.addChildNode(camera)
         let ambient = SCNNode(); ambient.light = SCNLight(); ambient.light?.type = .ambient; ambient.light?.intensity = 350; scene.rootNode.addChildNode(ambient)
         let light = SCNNode(); light.light = SCNLight(); light.light?.type = .omni; light.light?.intensity = 1000; light.position = SCNVector3(-70, 130, 90); scene.rootNode.addChildNode(light)
@@ -42,14 +45,12 @@ final class NativeFigure: ObservableObject {
         for side:Float in [-1,1] {
             let key = String(side)
             ell("trap"+key,position:local(side*4.2,27,-1.6),size:SIMD3(5.2,2.3*height,2.9),color:tone("back"),rotation:orientation)
-            ell("pecU"+key,position:local(side*4.9,22.6,4.2),size:SIMD3(4.7,2.5*height,1.75),color:tone("chest"),rotation:orientation)
-            ell("pecL"+key,position:local(side*4.5,20.2,4.5),size:SIMD3(4.3,2.6*height,1.9),color:tone("chest"),rotation:orientation)
+            ell("pectoral"+key,position:local(side*4.5,21.7,4.0),size:SIMD3(4.8,3.8*height,1.3),color:tone("chest"),rotation:orientation)
             ell("lat"+key,position:local(side*7.6,15.6,-2.6),size:SIMD3(2.9,7.6*height,2.5),color:tone("back"),rotation:orientation)
             ell("scapula"+key,position:local(side*4.9,22,-4.2),size:SIMD3(4.2,4.4*height,1.3),color:tone("back"),rotation:orientation)
             ell("erector"+key,position:local(side*1.9,8.5,-3.9),size:SIMD3(1.7,6.2*height,1.2),color:tone("back"),rotation:orientation)
-            for i in 0..<4 { ell("abs\(key)\(i)",position:local(side*1.75,5.6+Float(i)*3.25,3.9),size:SIMD3(1.7,1.5*height,0.8),color:tone("abs"),rotation:orientation) }
-            for i in 0..<3 { ell("serratus\(key)\(i)",position:local(side*(6.9-Float(i)*0.45),15.8+Float(i)*2,3.6),size:SIMD3(1.5,0.95*height,0.6),color:tone("abs"),rotation:orientation) }
-            ell("oblique"+key,position:local(side*4.7,9.6,2.6),size:SIMD3(1.9,4.6*height,1.5),color:tone("abs"),rotation:orientation)
+            ell("abdomen"+key,position:local(side*1.8,11,3.5),size:SIMD3(2.1,7.0*height,0.8),color:tone("abs"),rotation:orientation)
+            ell("oblique"+key,position:local(side*4.7,9.6,2.6),size:SIMD3(1.9,4.6*height,1.0),color:tone("abs"),rotation:orientation)
         }
         ell("head",position:local(0,35.1,0.1),size:SIMD3(4.3,5.3,4.1),color:gray,rotation:orientation)
         ell("hair",position:local(0,38,0),size:SIMD3(4.4,2.8,4.2),color:.black,rotation:orientation)
@@ -72,13 +73,13 @@ final class NativeFigure: ObservableObject {
                 }
             }
             bone("arm\(i)",shoulder,elbow,width:2.5,color:gray)
-            for (j,offset) in [Float(-1.6),0,1.5].enumerated() { ell("delt\(i)\(j)",position:shoulder+front*offset,size:SIMD3(3.2,4.1,2.6),color:tone("shoulders"),rotation:orientation) }
-            muscles("upper",shoulder,elbow,[(0.52,0,1.6,2.4,0.36,1.9,"biceps"),(0.72,1.5,0.6,1.3,0.2,1.3,"biceps"),(0.45,1.2,-1.4,1.9,0.38,1.8,"triceps"),(0.5,-0.9,-1.5,1.8,0.36,1.7,"triceps")])
+            for (j,offset) in [Float(0)].enumerated() { ell("delt\(i)\(j)",position:shoulder+front*offset,size:SIMD3(3.2,4.1,2.6),color:tone("shoulders"),rotation:orientation) }
+            muscles("upper",shoulder,elbow,[(0.52,0,1.6,2.4,0.36,1.9,"biceps"),(0.45,1.2,-1.4,1.9,0.38,1.8,"triceps")])
             bone("forearm\(i)",elbow,hand,width:1.75,color:gray)
-            muscles("fore",elbow,hand,[(0.3,1.1,0.5,1.5,0.3,1.5,"forearms"),(0.34,-0.9,0.3,1.6,0.32,1.6,"forearms"),(0.36,0.2,-1,1.3,0.3,1.2,"forearms")])
+            muscles("fore",elbow,hand,[(0.35,0,0,2.0,0.43,1.9,"forearms")])
             ell("hand\(i)",position:hand,size:SIMD3(1.9,2.4,1.25),color:gray)
             bone("thigh\(i)",thigh,knee,width:3.9,color:gray)
-            muscles("leg",thigh,knee,[(0.45,0,2.5,2.3,0.4,1.9,"quads"),(0.5,2.5,1.2,2.2,0.36,2.2,"quads"),(0.74,-1.9,1.7,1.9,0.2,1.7,"quads"),(0.5,1.5,-2.4,1.9,0.38,1.7,"hamstrings"),(0.5,-1.3,-2.5,1.8,0.37,1.6,"hamstrings")])
+            muscles("leg",thigh,knee,[(0.45,0,2.5,2.3,0.4,1.9,"quads"),(0.5,1.5,-2.4,1.9,0.38,1.7,"hamstrings")])
             ell("glute\(i)",position:thigh-front*3-up*1.6,size:SIMD3(4.1,4.2,2.9),color:tone("glutes"),rotation:orientation)
             bone("calf\(i)",knee,foot,width:2,color:gray)
             muscles("shin",knee,foot,[(0.3,1,-1.5,1.8,0.27,1.9,"calves"),(0.33,-1,-1.6,1.9,0.29,2,"calves")])
@@ -123,7 +124,7 @@ final class NativeFigure: ObservableObject {
     private func ell(_ key: String, position: SIMD3<Float>, size: SIMD3<Float>, color: UIColor, rotation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0,1,0))) {
         let node: SCNNode
         if let existing = nodes[key] { node = existing } else {
-            let sphere = SCNSphere(radius: 1); sphere.segmentCount = 24; sphere.firstMaterial?.lightingModel = .blinn; sphere.firstMaterial?.specular.contents = UIColor(white:0.12,alpha:1); sphere.firstMaterial?.shininess = 0.12; sphere.firstMaterial?.multiply.contents = muscleTexture
+            let sphere = SCNSphere(radius: 1); sphere.segmentCount = 24; sphere.firstMaterial?.lightingModel = .blinn; sphere.firstMaterial?.specular.contents = UIColor(white:0.12,alpha:1); sphere.firstMaterial?.shininess = 0.12; sphere.firstMaterial?.roughness.contents = 0.85
             node = SCNNode(geometry:key == "body" ? torsoGeometry() : sphere); nodes[key] = node; scene.rootNode.addChildNode(node)
         }
         node.isHidden = false; node.simdPosition = position; node.simdScale = size; node.simdOrientation = rotation; node.geometry?.firstMaterial?.diffuse.contents = color
@@ -154,13 +155,19 @@ final class NativeFigure: ObservableObject {
 struct NativeSceneView: UIViewRepresentable {
     let figure: NativeFigure
     var active: Bool = false
-    func makeUIView(context: Context) -> SCNView { let view = SCNView(); view.scene = figure.scene; view.pointOfView = figure.camera; view.backgroundColor = .white; view.isPlaying = active; view.rendersContinuously = active; view.preferredFramesPerSecond = 30; view.antialiasingMode = .multisampling4X; return view }
-    func updateUIView(_ view: SCNView, context: Context) { view.isPlaying = active; view.rendersContinuously = active }
+    func makeUIView(context: Context) -> SCNView { let view = SCNView(); view.scene = figure.scene; view.pointOfView = figure.camera; view.backgroundColor = demoSurface; view.isPlaying = active; view.rendersContinuously = active; view.preferredFramesPerSecond = 30; view.antialiasingMode = .multisampling4X; return view }
+    func updateUIView(_ view: SCNView, context: Context) {
+        let background = demoSurface.resolvedColor(with: view.traitCollection)
+        view.backgroundColor = background; figure.scene.background.contents = background
+        figure.scene.rootNode.childNodes.first { $0.geometry is SCNFloor }?.geometry?.firstMaterial?.diffuse.contents = background
+        view.isPlaying = active; view.rendersContinuously = active
+    }
 }
 struct NativeDemo: View {
     @ObservedObject var store: NativeStore; let exercise: Exercise
     var externallyPaused = false
     var bodyweightOnly = false
+    var showsControls = true
     @StateObject private var figure = NativeFigure()
     @Environment(\.scenePhase) private var phase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -173,17 +180,16 @@ struct NativeDemo: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            NativeSceneView(figure: figure, active: playing && phase == .active && !externallyPaused).accessibilityLabel("3D demonstration of " + exercise.name)
-            Text("Red: primary muscles · Peach: assisting muscles").font(.caption).foregroundStyle(.secondary)
-            HStack { Button("Starting position") { playing = false; time = 0; draw() }; Button("Movement path") { showPath.toggle(); draw() }.opacity(showPath ? 1 : 0.6) }.font(.caption).buttonStyle(.borderless)
-            ScrollView(.horizontal,showsIndicators:false) { HStack {
-                Button { playing.toggle() } label: { Image(systemName: playing ? "pause.fill" : "play.fill") }.accessibilityLabel(playing ? "Pause demo" : "Play demo")
-                Button { time = 0; draw() } label: { Image(systemName:"arrow.counterclockwise") }.accessibilityLabel("Replay")
-                Button(["Isometric", "Front", "Side"][view]) { view = (view+1)%3; draw() }
-                Button("Muscles") { highlights.toggle(); draw() }.opacity(highlights ? 1 : 0.6)
-                Button("Slow") { slow.toggle() }.opacity(slow ? 1 : 0.6)
-            }.font(.caption.bold()).buttonStyle(.bordered).padding(.horizontal,8).padding(.bottom,8) }
-        }.background(.white).foregroundStyle(Color(red:0.05,green:0.1,blue:0.24))
+            NativeSceneView(figure: figure, active: playing && phase == .active && !externallyPaused).frame(minHeight:240).accessibilityLabel("3D demonstration of " + exercise.name)
+            Text("Primary: " + (exercise.muscles ?? [exercise.g.capitalized]).joined(separator: ", "))
+                .font(.caption).foregroundStyle(.secondary).padding(.horizontal)
+            if showsControls { ViewThatFits(in:.horizontal) {
+                HStack(spacing:16) { demoControls }
+                VStack(spacing:4) { demoControls }
+            }.buttonStyle(.borderless).font(.subheadline).padding(.horizontal).padding(.bottom,8) }
+
+        }.background(Color(uiColor:demoSurface)).foregroundStyle(.primary)
+
         .onAppear { draw(); playing = !reduceMotion }
         .task(id: playing && phase == .active && !externallyPaused) {
             guard playing && phase == .active && !externallyPaused else { return }
@@ -195,6 +201,17 @@ struct NativeDemo: View {
         .onChange(of: reduceMotion) { _, value in if value { playing = false } }
         .onChange(of: exercise.id) { _, _ in time = 0; draw() }
         .onDisappear { playing = false }
+    }
+    @ViewBuilder private var demoControls: some View {
+                Button { playing.toggle() } label: { Label(playing ? "Pause" : "Play", systemImage: playing ? "pause.fill" : "play.fill").frame(minHeight:44) }
+                Button(["Isometric", "Front", "Side"][view]) { view = (view+1)%3; draw() }.frame(minHeight:44).accessibilityHint("Changes the camera angle")
+                Menu {
+                    Button("Replay", systemImage:"arrow.counterclockwise") { time = 0; draw() }
+                    Button("Starting Position") { playing = false; time = 0; draw() }
+                    Toggle("Highlight Muscles", isOn:Binding(get:{highlights},set:{ highlights=$0; draw() }))
+                    Toggle("Slow Motion", isOn:$slow)
+                    Toggle("Movement Path", isOn:Binding(get:{showPath},set:{ showPath=$0; draw() }))
+                } label: { Label("Options",systemImage:"ellipsis.circle").frame(minHeight:44) }
     }
     private func draw() { figure.update(store:store,exercise:exercise,time:time,highlights:highlights,view:view,showPath:showPath,bodyweightOnly:bodyweightOnly) }
 }
