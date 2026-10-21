@@ -65,7 +65,9 @@ extension CompanionUITests {
         app.swipeUp(); XCTAssertTrue(log.isHittable)
         log.tap()
         XCTAssertTrue(app.buttons["Log set"].waitForExistence(timeout:5))
-        XCTAssertFalse(app.buttons["Isometric"].exists)
+        // UIKit retains the workout beneath the sheet in its accessibility tree.
+        XCTAssertFalse(app.buttons["Isometric"].isHittable)
+        XCTAssertTrue(app.buttons["Log set"].isHittable)
         let attachment = XCTAttachment(screenshot:app.screenshot()); attachment.name = "Compact set entry"; attachment.lifetime = .keepAlways; add(attachment)
         app.buttons["Done"].tap()
         app.buttons["End"].tap()
