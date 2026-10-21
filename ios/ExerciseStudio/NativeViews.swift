@@ -196,7 +196,7 @@ struct NativeExerciseDetail: View {
                     if let target = store.rule("recommendation", ["id": exercise.id, "date": date, "scheme": targetScheme]) as? [String: Any] {
                         Text("Last session · " + (target["date"] as? String ?? "") + " · " + setLabel(target["last"] as? [String: Any] ?? [:])).font(.subheadline)
                         if target["ready"] as? Bool == true { Text("You reached the top of your range in two sessions. Try the next available weight if your form stays comfortable.").font(.caption).foregroundStyle(.secondary) }
-                    } else { Text("Start comfortably and use the form guidance above.").font(.subheadline).foregroundStyle(.secondary) }
+                    } else { Text(onLog == nil ? "Start comfortably and use the form guidance above." : "Start comfortably. Form guidance is available in your workout.").font(.subheadline).foregroundStyle(.secondary) }
                 }
                 Section(editIndex == nil ? "Log set" : "Edit set") {
                     if exercise.timed == 1 {
